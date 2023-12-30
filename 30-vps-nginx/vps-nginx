@@ -1,7 +1,10 @@
 #!/bin/bash
 
+if [ -z "$VPS_NGINX_LOG_DIR" ]; then
+  VPS_NGINX_LOG_DIR='/usr/local/nginx/logs'
+fi
 if [ -z "$VPS_NGINX_PID_FILE" ]; then
-  VPS_NGINX_PID_FILE='/home/nginx/nginx.pid'
+  VPS_NGINX_PID_FILE='/usr/local/nginx/nginx.pid'
 fi
 
 cleanup() {
@@ -28,17 +31,22 @@ start() {
 
   # 启动组网和sshd服务
   echo "start vps-tailscale-server"
-  #vps-tailscale-server start
+  vps-tailscale-server start
+
+  # 初始化
+  if [ ! -d "$VPS_NGINX_LOG_DIR" ]; then
+    install -m 755 -d "$VPS_NGINX_LOG_DIR"
+  fi
 
   # 启动nginx服务
   echo "start nginx"
-  su - nginx /bin/bash -c nginx
+  nginx
 
   # 等待nginx服务结束
   nginx_pid=$(cat "$VPS_NGINX_PID_FILE" 2>/dev/null)
   echo "wait nginx: $nginx_pid"
   while ps -p $nginx_pid > /dev/null 2>&1; do
-    sleep 5
+    sleep 3
   done
 }
 
