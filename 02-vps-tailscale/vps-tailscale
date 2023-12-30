@@ -1,0 +1,193 @@
+#!/bin/bash
+
+# HEADSCALE_NS 用于指定headscale命名空间
+if [ -z "$HEADSCALE_NS" ]; then
+  echo "error: HEADSCALE_NS is not set"
+  exit 1
+fi
+# HEADSCALE_SSH_HOST 用于指定部署headscale的服务器host
+if [ -z "$HEADSCALE_SSH_HOST" ]; then
+  echo "error: HEADSCALE_SSH_HOST is not set"
+  exit 1
+fi
+# HEADSCALE_SSH_PORT 用于指定部署headscale的服务器的ssh端口，默认为22
+if [ -z "$HEADSCALE_SSH_PORT" ]; then
+  HEADSCALE_SSH_PORT=22
+fi
+# HEADSCALE_LOGIN_SERVER 用于指定部署headscale服务的url地址
+if [ -z "$HEADSCALE_LOGIN_SERVER" ]; then
+  echo "error: HEADSCALE_LOGIN_SERVER is not set"
+  exit 1
+fi
+# TAILSCALE_NODE_NAME 当前节点名称，默认使用主机名
+if [ -z "$TAILSCALE_NODE_NAME" ]; then
+  TAILSCALE_NODE_NAME=$(hostname)
+fi
+
+# 使用ssh登陆到headscale所在vps上执行指定的headscale命令
+exec_headscale() {
+  ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -p $HEADSCALE_SSH_PORT root@$HEADSCALE_SSH_HOST docker exec vps-headscale headscale "$@"
+}
+
+# 检查headscale命名空间是否存在
+exists_headscale_ns() {
+  exec_headscale ns list 2>&1 | grep -q "$HEADSCALE_NS"
+}
+
+# 创建headscale命名空间
+create_headscale_ns() {
+  exec_headscale ns create "$HEADSCALE_NS" 2>&1
+}
+
+# 申请临时节点的authkey
+apply_authkey_with_ephemeral() {
+  exec_headscale pre create --ephemeral -u "$HEADSCALE_NS" 2>&1 | sed -nE '/^[0-9a-z]+$/p'
+}
+
+# 检查指定节点$1是否在线
+exists_online_node() {
+  exec_headscale node list -u "$HEADSCALE_NS" --output 'json-line' 2>&1 | python -c "import sys,json;ret=json.load(sys.stdin);[print(item.get('name', '') + (item.get('online', False) and '@online' or '@offline')) for item in ret]" | grep -Eq "^$1@online$"
+}
+
+# 如果指定节点$1不在线则删除
+delete_offline_node() {
+  offline_node_id=$(exec_headscale node list -u "$HEADSCALE_NS" --output 'json-line' 2>&1 | python -c "import sys,json;ret=json.load(sys.stdin);[print(str(item.get('id', '')) + '@' + item.get('name', '') + (item.get('online', False) and '@online' or '@offline')) for item in ret]" | grep "@$1@offline$" | awk -F '@' '{print $1}')
+  if [ -n "${offline_node_id}" ]; then
+    exec_headscale node delete -i $offline_node_id --force
+  fi
+}
+
+# 运行tailscaled
+run_tailscaled() {
+  # 初始化tun --cap-add MKNOD
+  if [ ! -d /dev/net ]; then
+    mkdir -p /dev/net
+  fi
+  if [ ! -e /dev/net/tun ]; then
+    mknod /dev/net/tun c 10 200
+  fi
+  if ! pgrep tailscaled > /dev/null 2>&1; then
+    # 清理tailscaled
+    tailscaled -cleanup
+    # 运行tailscaled
+    tailscaled > /dev/null &
+  fi
+}
+
+# 使用tailsacle组网
+do_tailscale_up() {
+  # 等待headscale启动，如果没有ns需要创建
+  while ! exists_headscale_ns; do
+    create_headscale_ns
+    if ! exists_headscale_ns; then
+      sleep 3
+    fi
+  done
+
+  # 申请authkey
+  authkey=''
+  while [ -z "${authkey}" ]; do
+    authkey="$(apply_authkey_with_ephemeral)"
+    if [ -z "${authkey}" ]; then
+      sleep 3
+    fi
+  done
+
+  # 如果存在同名的offline节点则先进行移除
+  delete_offline_node "$TAILSCALE_NODE_NAME"
+
+  # up一个临时节点
+  tailscale up \
+    --login-server=${HEADSCALE_LOGIN_SERVER} \
+    --auth-key=${authkey} \
+    --accept-dns=true \
+    --accept-routes=true \
+    --timeout 5s
+}
+
+# 使用tailsacle组网
+tailscale_up() {
+  while pgrep tailscaled > /dev/null 2>&1 && ! do_tailscale_up; do
+    sleep 3
+  done
+}
+
+# 保持组网状态
+keepalive() {
+  while pgrep tailscaled > /dev/null 2>&1; do
+    sleep 10
+    if ! exists_online_node "$TAILSCALE_NODE_NAME"; then
+      tailscale_up
+    fi
+  done
+}
+
+# 清理脚本，用于退出临时节点并且停止tailscaled
+cleanup() {
+  # 登出销毁临时节点
+  tailscale logout
+  # 处理直接调用cleanup的情况
+  tailscaled_pid=$(pgrep tailscaled)
+  if ps -p $tailscaled_pid > /dev/null 2>&1; then
+    kill $tailscaled_pid
+    # 等待tailscaled停止
+    while ps -p $tailscaled_pid > /dev/null 2>&1; do
+      sleep 1
+    done
+    # 清理tailscaled
+    tailscaled -cleanup
+  fi
+  # 清除pid文件
+  if [ -f /var/run/vps-tailscale.pid ]; then
+      rm -f /var/run/vps-tailscale.pid
+  fi
+}
+
+# 启动tailscaled服务，且保持持续组网且等待
+start() {
+  vps-almalinux init
+  # 记录pid
+  if [ ! -d /var/run ]; then
+    mkdir /var/run
+  fi
+  echo "$$" > /var/run/vps-tailscale.pid
+  # 注册清理函数
+  trap cleanup SIGTERM
+  # 运行tailscaled
+  run_tailscaled
+  # 组网并保持活跃
+  tailscale_up
+  (
+    trap cleanup SIGTERM
+    keepalive
+  ) &
+  echo "$!" > /var/run/vps-tailscale.pid
+}
+
+start_and_wait() {
+  start
+  wait "$(cat /var/run/vps-tailscale.pid)"
+}
+
+# 结束tailscaled服务
+stop() {
+  if [ -f /var/run/vps-tailscale.pid ]; then
+    kill "$(cat /var/run/vps-tailscale.pid)"
+    inotifywait -e delete /var/run/vps-tailscale.pid > /dev/null 2>&1
+  fi
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  'start-and-wait')
+    start_and_wait
+    ;;
+  'stop')
+    stop
+    ;;
+  *)
+    echo "Usage: $0 {start|start-and-wait|stop}"
+    ;;
+esac

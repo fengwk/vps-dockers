@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# headscale服务的pid
+headscale_pid=0
+
+cleanup() {
+  # 先停止组网和sshd服务，否则headscale服务停止组网将无法退出
+  vps-tailscale-server stop
+
+  # 停止headscale服务
+  if ps -p $headscale_pid > /dev/null 2>&1; then
+    kill $headscale_pid
+  fi
+}
+
+start() {
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动headscale服务
+  headscale serve &
+  headscale_pid=$!
+
+  # 启动组网和sshd服务
+  vps-tailscale-server start
+
+  # 等待headscale服务退出
+  if ps -p $headscale_pid > /dev/null 2>&1; then
+    wait $headscale_pid
+  fi
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac

@@ -1,0 +1,52 @@
+#!/bin/bash
+
+if [ -z "$VPS_NGINX_PID_FILE" ]; then
+  VPS_NGINX_PID_FILE='/home/nginx/nginx.pid'
+fi
+
+cleanup() {
+  echo "vps-nginx cleanup"
+
+  # 停止nginx服务
+  echo "stop nginx"
+  nginx -s stop
+
+  # 等待nginx服务结束
+  nginx_pid=$(cat "$VPS_NGINX_PID_FILE" 2>/dev/null)
+  while ps -p $nginx_pid > /dev/null 2>&1; do
+    sleep 1
+  done
+
+  # 停止组网和sshd服务
+  echo "stop vps-tailscale-server"
+  vps-tailscale-server stop
+}
+
+start() {
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo "start vps-tailscale-server"
+  #vps-tailscale-server start
+
+  # 启动nginx服务
+  echo "start nginx"
+  su - nginx /bin/bash -c nginx
+
+  # 等待nginx服务结束
+  nginx_pid=$(cat "$VPS_NGINX_PID_FILE" 2>/dev/null)
+  echo "wait nginx: $nginx_pid"
+  while ps -p $nginx_pid > /dev/null 2>&1; do
+    sleep 5
+  done
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac

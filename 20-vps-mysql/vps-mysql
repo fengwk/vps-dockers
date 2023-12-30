@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# 配置文件位置
+if [ -z "$VPS_MYSQL_MY_CNF" ]; then
+  VPS_MYSQL_MY_CNF='/etc/my.cnf'
+fi
+# 初始化sql
+if [ -z "$VPS_MYSQL_INIT_SQL" ]; then
+  VPS_MYSQL_INIT_SQL='/etc/vps-mysql-init.sql'
+fi
+
+cleanup() {
+  echo "vps-mysql cleanup"
+
+  # 停止mysqld
+  pid_file=$(get_cnf_value 'pid_file' 'pid-file')
+  echo "get pid_file: $pid_file"
+
+  mysqld_pid=$(cat "$pid_file" 2>/dev/null)
+  echo "get mysqld_pid: $mysqld_pid"
+
+  if ps -p $mysqld_pid > /dev/null 2>&1; then
+    echo "kill mysqld: $mysqld_pid"
+    kill $mysqld_pid
+    while ps -p $mysqld_pid > /dev/null 2>&1; do
+      sleep 1
+    done
+  fi
+
+  # 停止组网和sshd服务
+  echo "stop vps-tailscale-server"
+  vps-tailscale-server stop
+}
+
+get_cnf_value() {
+  for name in $@; do
+    val=$(cat "$VPS_MYSQL_MY_CNF" | grep -E "^ *$name *=" | awk -F '=' '{print $2}' | sed -e 's/^ *//' -e 's/ *$//')
+    if [ -n "$val" ]; then
+      echo "$val"
+      break;
+    fi
+  done
+}
+
+get_cnf_value_reqiured() {
+  val=$(get_cnf_value $@)
+  if [ -z "$val" ]; then
+    echo "error: can not found '$1' in '$VPS_MYSQL_MY_CNF'"
+    exit 1
+  fi
+  echo "$val"
+}
+
+start() {
+  # 收集配置信息
+  datadir=$(get_cnf_value_reqiured 'datadir')
+  echo "datadir: $datadir"
+  log_error=$(get_cnf_value_reqiured 'log_error' 'log-error')
+  echo "log_error: $log_error"
+  pid_file=$(get_cnf_value_reqiured 'pid_file' 'pid-file')
+  echo "pid_file: $pid_file"
+
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo "start vps-tailscale-server"
+  vps-tailscale-server start
+
+  # 如果没有初始化过则初始化数据目录
+  # https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
+  first_init=false
+  if [ ! -d "$datadir" ] || [ $(ls "$datadir" | wc -l) -eq 0 ]; then
+      first_init=true
+  fi
+  if $first_init; then
+    echo "mysqld initialize..."
+    if [ ! -d "$datadir" ]; then
+      install -o mysql -g mysql -m 755 -d "$datadir"
+    fi
+    log_error_dir=$(dirname "$log_error")
+    if [ ! -d "$log_error_dir" ]; then
+      install -o mysql -g mysql -m 755 -d "$log_error_dir"
+    fi
+    mysqld --defaults-file="$VPS_MYSQL_MY_CNF" --initialize --user=mysql
+    echo "mysqld initialize done"
+  fi
+
+  # 启动mysql
+  su - mysql /bin/bash -c 'mysqld_safe --user=mysql' &
+  mysqld_safe_pid=$!
+
+  # 等待mysql启动
+  echo "wait mysqld running..."
+  sleep 10
+
+  # 如果是首次执行则要执行初始化sql
+  if $first_init && [ -f "$VPS_MYSQL_INIT_SQL" ]; then
+    echo "execute vps mysql init sql"
+    tmp_pwd=$(grep 'A temporary password' "$log_error" | tail -1 | awk -F 'root@localhost:' '{print $2}' | awk '{print $1}')
+    mysql -uroot -p"$tmp_pwd" --connect-expired-password -e "source $VPS_MYSQL_INIT_SQL"
+    echo "execute vps mysql init sql done"
+  fi
+
+  echo "wait mysqld_safe_pid: $mysqld_safe_pid"
+  wait $mysqld_safe_pid
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac

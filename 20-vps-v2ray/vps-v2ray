@@ -1,0 +1,40 @@
+#!/bin/bash
+
+v2ray_pid=0
+
+cleanup() {
+  # 停止v2ray服务
+  if ps -p $v2ray_pid > /dev/null 2>&1; then
+    kill $v2ray_pid
+    wait $v2ray_pid
+  fi
+
+  # 停止组网和sshd服务
+  vps-tailscale-server stop
+}
+
+start() {
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  vps-tailscale-server start
+
+  # 启动v2ray服务
+  /usr/local/bin/v2ray run -config /usr/local/etc/v2ray/config.json &
+  v2ray_pid=$!
+
+  # 等待v2ray服务退出
+  if ps -p $v2ray_pid > /dev/null 2>&1; then
+    wait $v2ray_pid
+  fi
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac

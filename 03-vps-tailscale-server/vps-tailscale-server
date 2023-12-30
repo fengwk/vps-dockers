@@ -1,0 +1,34 @@
+#!/bin/bash
+
+start() {
+  # 启动vps-tailscale完成组网
+  vps-tailscale start
+  # sshd必须使用绝对路径运行
+  /usr/sbin/sshd
+}
+
+stop() {
+  # 停止sshd
+  if [ -f /var/run/sshd.pid ]; then
+      sshd_pid=$(cat /var/run/sshd.pid)
+      kill $sshd_pid
+      # 等待sshd停止
+      while ps -p $sshd_pid > /dev/null 2>&1; do
+          sleep 1
+      done
+  fi
+  # 停止tailscale组网
+  vps-tailscale stop
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  'stop')
+    stop
+    ;;
+  *)
+    echo "Usage: $0 {start|stop}"
+    ;;
+esac
