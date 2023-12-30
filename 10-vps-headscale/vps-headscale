@@ -1,14 +1,26 @@
 #!/bin/bash
 
+# if [ -z "$VPS_HEADSCALE_DATA_DIR" ]; then
+#   VPS_HEADSCALE_DATA_DIR='/usr/local/headscale/data'
+# fi
+# if [ -z "$VPS_HEADSCALE_CACHE_DIR" ]; then
+#   VPS_HEADSCALE_CACHE_DIR='/usr/local/headscale/cache'
+# fi
+# if [ -z "$VPS_HEADSCALE_LOG" ]; then
+#   VPS_HEADSCALE_LOG='/usr/local/headscale/logs/headscale.log'
+# fi
+
 # headscale服务的pid
 headscale_pid=0
 
 cleanup() {
   # 先停止组网和sshd服务，否则headscale服务停止组网将无法退出
+  echo 'stop vps-tailscale-server'
   vps-tailscale-server stop
 
   # 停止headscale服务
   if ps -p $headscale_pid > /dev/null 2>&1; then
+    echo "kill headscale: $headscale_pid"
     kill $headscale_pid
   fi
 }
@@ -17,15 +29,33 @@ start() {
   # 注册清理函数
   trap cleanup SIGTERM
 
+  # 初始化
+  # if [ ! -d "$VPS_HEADSCALE_DATA_DIR" ]; then
+  #   install -m 755 -d "$VPS_HEADSCALE_DATA_DIR"
+  # fi
+  # if [ ! -f "$VPS_HEADSCALE_DATA_DIR/db.sqllite" ]; then
+  #   touch "$VPS_HEADSCALE_DATA_DIR/db.sqllite"
+  # fi
+  # if [ ! -d "$VPS_HEADSCALE_CACHE_DIR" ]; then
+  #   install -m 755 -d "$VPS_HEADSCALE_CACHE_DIR"
+  # fi
+  # vps_headscale_log_dir=$(dirname "$VPS_HEADSCALE_LOG")
+  # if [ ! -d "$vps_headscale_log_dir" ]; then
+  #   install -m 755 -d "$vps_headscale_log_dir"
+  # fi
+
   # 启动headscale服务
+  echo 'start headscale'
   headscale serve &
   headscale_pid=$!
 
   # 启动组网和sshd服务
+  echo 'start vps-tailscale-server'
   vps-tailscale-server start
 
   # 等待headscale服务退出
   if ps -p $headscale_pid > /dev/null 2>&1; then
+    echo "wait headscale: $headscale_pid"
     wait $headscale_pid
   fi
 }
