@@ -1,14 +1,32 @@
 #!/bin/bash
 
+# 自动检测是否需要启用tailscale组网
+enable_tailscale=true
+if [ -z "$HEADSCALE_NS" ]; then
+  enable_tailscale=false
+fi
+if [ -z "$HEADSCALE_SSH_HOST" ]; then
+  enable_tailscale=false
+fi
+if [ -z "$HEADSCALE_LOGIN_SERVER" ]; then
+  enable_tailscale=false
+fi
+
 start() {
   # 启动vps-tailscale完成组网
-  vps-tailscale start
+  if $enable_tailscale; then
+    echo 'start vps-tailscale'
+    vps-tailscale start
+  fi
+
   # sshd必须使用绝对路径运行
+  echo 'start sshd'
   /usr/sbin/sshd
 }
 
 stop() {
   # 停止sshd
+  echo "stop sshd"
   if [ -f /var/run/sshd.pid ]; then
       sshd_pid=$(cat /var/run/sshd.pid)
       kill $sshd_pid
@@ -17,8 +35,12 @@ stop() {
           sleep 1
       done
   fi
+
   # 停止tailscale组网
-  vps-tailscale stop
+  if $enable_tailscale; then
+    echo "stop vps-tailscale"
+    vps-tailscale stop
+  fi
 }
 
 case "$1" in

@@ -117,6 +117,7 @@ keepalive() {
   while pgrep tailscaled > /dev/null 2>&1; do
     sleep 10
     if ! exists_online_node "$TAILSCALE_NODE_NAME"; then
+      echo 'tailscale offline, retry up'
       tailscale logout
       tailscale_up
     fi
@@ -126,40 +127,56 @@ keepalive() {
 # 清理脚本，用于退出临时节点并且停止tailscaled
 cleanup() {
   # 登出销毁临时节点
+  echo 'tailscale logout'
   tailscale logout
+
   # 处理直接调用cleanup的情况
   tailscaled_pid=$(pgrep tailscaled)
   if ps -p $tailscaled_pid > /dev/null 2>&1; then
+    echo "kill tailscaled: $tailscaled_pid"
     kill $tailscaled_pid
     # 等待tailscaled停止
+    echo 'wait tailscaled stop...'
     while ps -p $tailscaled_pid > /dev/null 2>&1; do
       sleep 1
     done
     # 清理tailscaled
+    echo 'cleanup tailscaled'
     tailscaled -cleanup
   fi
   # 清除pid文件
   if [ -f /var/run/vps-tailscale.pid ]; then
+      echo 'rm vps-tailscale.pid'
       rm -f /var/run/vps-tailscale.pid
   fi
 }
 
 # 启动tailscaled服务，且保持持续组网且等待
 start() {
+  echo 'init vps-almalinux'
   vps-almalinux init
+
   # 记录pid
   if [ ! -d /var/run ]; then
     mkdir /var/run
   fi
   echo "$$" > /var/run/vps-tailscale.pid
+  echo "record vps-tailscale.pid: $$"
+
   # 注册清理函数
   trap cleanup SIGTERM
+
   # 运行tailscaled
+  echo 'run tailscaled'
   run_tailscaled
+
   # 组网并保持活跃
+  echo 'up tailscale'
   tailscale_up
+
   (
     trap cleanup SIGTERM
+    echo 'keepalive tailscale'
     keepalive
   ) &
   echo "$!" > /var/run/vps-tailscale.pid
@@ -167,13 +184,18 @@ start() {
 
 start_and_wait() {
   start
-  wait "$(cat /var/run/vps-tailscale.pid)"
+  vps_tail_pid=$(cat /var/run/vps-tailscale.pid)
+  echo "wait $vps_tail_pid"
+  wait $vps_tail_pid
 }
 
 # 结束tailscaled服务
 stop() {
   if [ -f /var/run/vps-tailscale.pid ]; then
-    kill "$(cat /var/run/vps-tailscale.pid)"
+    vps_tailscale_pid="$(cat /var/run/vps-tailscale.pid)"
+    echo "kill vps-tailscale: $vps_tailscale_pid"
+    kill $vps_tailscale_pid
+    echo 'wait vps-tailscale stop...'
     inotifywait -e delete /var/run/vps-tailscale.pid > /dev/null 2>&1
   fi
 }
