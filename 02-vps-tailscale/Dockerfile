@@ -8,4 +8,4 @@ RUN dnf update -y \
 
 COPY ["vps-tailscale", "/usr/sbin/vps-tailscale"]
 
-CMD ["/bin/bash", "-c", "vps-tailscale start-and-wait"]
+CMD ["/bin/bash"]

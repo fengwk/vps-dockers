@@ -8,12 +8,14 @@ v2ray_pid=0
 
 cleanup() {
   # 停止v2ray服务
+  echo 'stop v2ray'
   if ps -p $v2ray_pid > /dev/null 2>&1; then
     kill $v2ray_pid
     wait $v2ray_pid
   fi
 
   # 停止组网和sshd服务
+  echo 'stop vps-tailscale-server'
   vps-tailscale-server stop
 }
 
@@ -27,14 +29,17 @@ start() {
   fi
 
   # 启动组网和sshd服务
+  echo 'start vps-tailscale-server'
   vps-tailscale-server start
 
   # 启动v2ray服务
+  echo 'start v2ray'
   /usr/local/bin/v2ray run -config /usr/local/etc/v2ray/config.json &
   v2ray_pid=$!
 
   # 等待v2ray服务退出
   if ps -p $v2ray_pid > /dev/null 2>&1; then
+    echo "wait v2ray: $v2ray_pid"
     wait $v2ray_pid
   fi
 }

@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# 配置文件位置
+if [ -z "$VPS_REDIS_CONFIG" ]; then
+  VPS_REDIS_CONFIG='/etc/redis.conf'
+fi
+# 数据文件位置
+if [ -z "$VPS_REDIS_DATA_DIR" ]; then
+  VPS_REDIS_DATA_DIR='/var/lib/redis'
+fi
+# 日志文件位置
+if [ -z "$VPS_REDIS_LOG" ]; then
+  VPS_REDIS_LOG='/var/log/redis/redis-server.log'
+fi
+
+redis_server_pid=0
+
+cleanup() {
+  echo 'vps-redis cleanup'
+
+  # 停止redis-server
+  echo 'stop redis-server'
+  if ps -p $redis_server_pid > /dev/null 2>&1; then
+    kill $redis_server_pid
+    wait $redis_server_pid
+  fi
+
+  # 停止组网和sshd服务
+  echo 'stop vps-tailscale-server'
+  vps-tailscale-server stop
+}
+
+start() {
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo 'start vps-tailscale-server'
+  vps-tailscale-server start
+
+  # 初始化
+  if [ ! -d "$VPS_REDIS_DATA_DIR" ]; then
+    install -m 755 -d "$VPS_REDIS_DATA_DIR"
+  fi
+  vps_redis_log_dir="$(dirname "$VPS_REDIS_LOG")"
+  if [ ! -d "$vps_redis_log_dir" ]; then
+    install -m 755 -d "$vps_redis_log_dir"
+  fi
+
+  # 启动redis-server
+  echo 'start redis-server'
+  redis-server "$VPS_REDIS_CONFIG" &
+  redis_server_pid=$!
+
+  echo "wait redis-server: $redis_server_pid"
+  wait $redis_server_pid
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac
