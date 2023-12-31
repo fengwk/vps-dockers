@@ -2,11 +2,11 @@
 
 # 配置文件位置
 if [ -z "$VPS_MYSQL_MY_CNF" ]; then
-  VPS_MYSQL_MY_CNF='/etc/my.cnf'
+  VPS_MYSQL_MY_CNF='/etc/mysql/my.cnf'
 fi
 # 初始化sql
 if [ -z "$VPS_MYSQL_INIT_SQL" ]; then
-  VPS_MYSQL_INIT_SQL='/etc/vps-mysql-init.sql'
+  VPS_MYSQL_INIT_SQL='/etc/mysql/init.sql'
 fi
 # home目录
 if [ -z "$VPS_MYSQL_HOME" ]; then
@@ -14,7 +14,7 @@ if [ -z "$VPS_MYSQL_HOME" ]; then
 fi
 
 cleanup() {
-  echo "vps-mysql cleanup"
+  echo 'cleanup vps-mysql'
 
   # 停止mysqld
   pid_file=$(get_cnf_value 'pid_file' 'pid-file')

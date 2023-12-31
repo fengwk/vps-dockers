@@ -7,9 +7,12 @@ fi
 v2ray_pid=0
 
 cleanup() {
+  echo 'cleanup vps-v2ray'
+
   # 停止v2ray服务
   echo 'stop v2ray'
   if ps -p $v2ray_pid > /dev/null 2>&1; then
+    echo "kill v2ray: $v2ray_pid"
     kill $v2ray_pid
     wait $v2ray_pid
   fi

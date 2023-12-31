@@ -2,7 +2,7 @@
 
 # 配置文件位置
 if [ -z "$VPS_REDIS_CONFIG" ]; then
-  VPS_REDIS_CONFIG='/etc/redis.conf'
+  VPS_REDIS_CONFIG='/etc/redis/redis.conf'
 fi
 # 数据文件位置
 if [ -z "$VPS_REDIS_DATA_DIR" ]; then

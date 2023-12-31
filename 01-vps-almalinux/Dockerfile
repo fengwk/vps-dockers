@@ -6,6 +6,7 @@ RUN echo -e "\n\nalias ll='ls -lh --color=auto'\nalias ls='ls --color=auto'" >> 
     && dnf install -y epel-release \
     && dnf install -y iproute procps-ng neovim git gcc make which bind-utils python pip inotify-tools \
     && ln -s /bin/nvim /bin/vim \
+    && pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade pip \
     && install -m 700 -d /root/.ssh
 
 # nvim配置

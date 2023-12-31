@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# headscale服务的pid
+calibre_web_pid=0
+
+cleanup() {
+  echo "cleanup vps-calibre-web"
+
+  # 停止headscale服务
+  if ps -p $calibre_web_pid > /dev/null 2>&1; then
+    echo "kill calibre-web: $calibre_web_pid"
+    kill $calibre_web_pid
+    wait $calibre_web_pid
+  fi
+
+  # 先停止组网和sshd服务
+  echo 'stop vps-tailscale-server'
+  vps-tailscale-server stop
+}
+
+start() {
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo 'start vps-tailscale-server'
+  vps-tailscale-server start
+
+  # 初始化
+  if [ ! -d /usr/local/calibre-web/logs ]; then
+    install -m 755 -d /usr/local/calibre-web/logs
+  fi
+  # if [ -f /usr/local/tmp/metadata.db ]; then
+  #   mv /usr/local/tmp/metadata.db /usr/local/calibre-web/data/metadata.db
+  # fi
+
+  # 启动calibre-web服务
+  # https://github.com/janeczku/calibre-web/wiki/Command-Line-Interface#command-line-options
+  echo 'start calibre-web'
+  cps &
+  calibre_web_pid=$!
+
+  # 等待headscale服务退出
+  if ps -p $calibre_web_pid > /dev/null 2>&1; then
+    echo "wait calibre-web: $calibre_web_pid"
+    wait $calibre_web_pid
+  fi
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac
