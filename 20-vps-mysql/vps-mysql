@@ -8,6 +8,10 @@ fi
 if [ -z "$VPS_MYSQL_INIT_SQL" ]; then
   VPS_MYSQL_INIT_SQL='/etc/vps-mysql-init.sql'
 fi
+# home目录
+if [ -z "$VPS_MYSQL_HOME" ]; then
+  VPS_MYSQL_HOME='/home/mysql'
+fi
 
 cleanup() {
   echo "vps-mysql cleanup"
@@ -75,6 +79,7 @@ start() {
   fi
   if $first_init; then
     echo "mysqld initialize..."
+    chown -R mysql:mysql "$VPS_MYSQL_HOME"
     if [ ! -d "$datadir" ]; then
       install -o mysql -g mysql -m 755 -d "$datadir"
     fi
