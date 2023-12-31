@@ -117,6 +117,7 @@ keepalive() {
   while pgrep tailscaled > /dev/null 2>&1; do
     sleep 10
     if ! exists_online_node "$TAILSCALE_NODE_NAME"; then
+      tailscale logout
       tailscale_up
     fi
   done
