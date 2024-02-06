@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# 环境变量
+# APP_REPO app仓库地址
+
+init() {
+  if [ ! -d /usr/local/app ]; then
+    set -uex
+    # 设置GIT_SSH_COMMAND避免git clone过程中出现yes/no的ssh询问
+    GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
+    # clone app仓库
+    git clone $APP_REPO /usr/local/app
+    # 构建app
+    cd /usr/local/app
+    mvn clean install
+  fi
+}
+
+cleanup() {
+  # 停止应用
+  echo 'stop vps-app'
+  /usr/local/app/scripts/app stop
+
+  # 停止组网和sshd服务
+  echo 'stop vps-tailscale-server'
+  vps-tailscale-server stop
+}
+
+start() {
+  init
+
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo "start vps-tailscale-server"
+  vps-tailscale-server start
+
+  echo 'start vps-app'
+  /usr/local/app/scripts/app start
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac

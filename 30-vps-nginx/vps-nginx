@@ -11,7 +11,7 @@ cleanup() {
   echo 'cleanup vps-nginx'
 
   # 停止nginx服务
-  echo 'stop nginx'
+  echo 'stop vps-nginx'
   nginx -s stop
 
   # 等待nginx服务结束
@@ -39,7 +39,7 @@ start() {
   fi
 
   # 启动nginx服务
-  echo "start nginx"
+  echo "start vps-nginx"
   nginx
 
   # 等待nginx服务结束
