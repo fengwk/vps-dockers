@@ -3,16 +3,17 @@
 # 环境变量
 # APP_REPO app仓库地址
 
-init() {
+pull_and_build() {
   if [ ! -d /usr/local/app ]; then
     set -uex
     # 设置GIT_SSH_COMMAND避免git clone过程中出现yes/no的ssh询问
-    GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
+    # export GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
     # clone app仓库
     git clone $APP_REPO /usr/local/app
     # 构建app
     cd /usr/local/app
-    mvn clean install
+    /usr/local/app/scripts/app env
+    /usr/local/app/scripts/app build
   fi
 }
 
@@ -27,8 +28,6 @@ cleanup() {
 }
 
 start() {
-  init
-
   # 注册清理函数
   trap cleanup SIGTERM
 
@@ -36,8 +35,17 @@ start() {
   echo "start vps-tailscale-server"
   vps-tailscale-server start
 
+  # 必须在vps-tailscale-server完成初始化后运行
+  # 此时ssh密钥已正确被设置
+  pull_and_build
+
   echo 'start vps-app'
   /usr/local/app/scripts/app start
+  app_pid=$(/usr/local/app/scripts/app pid)
+  if [ -n "$app_pid" ]; then
+    echo "wait app_pid: $app_pid"
+    wait $app_pid
+  fi
 }
 
 case "$1" in
