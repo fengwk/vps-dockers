@@ -66,11 +66,11 @@ run_tailscaled() {
   if [ ! -e /dev/net/tun ]; then
     mknod /dev/net/tun c 10 200
   fi
-  if ! pgrep tailscaled > /dev/null 2>&1; then
+  if ! pgrep tailscaled >/dev/null 2>&1; then
     # 清理tailscaled
     tailscaled -cleanup
     # 运行tailscaled
-    tailscaled > /dev/null &
+    tailscaled >/dev/null 2>&1 &
   fi
 }
 
