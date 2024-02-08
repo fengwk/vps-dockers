@@ -1,6 +1,8 @@
 FROM fengwk/vps-tailscale-server
 
-RUN mkdir -p /var/lib/headscale \
+RUN set -uex \
+    && mkdir -p /var/lib/headscale \
+    && mkdir -p /var/log/headscale \
     && touch /var/lib/headscale/db.sqllite \
     && mkdir -p /var/run/headscale
 
@@ -9,6 +11,6 @@ RUN mkdir -p /var/lib/headscale \
 # COPY ["headscale_0.23.0-alpha1_linux_amd64", "/usr/sbin/headscale"]
 COPY ["headscale_0.22.3_linux_amd64", "/usr/local/bin/headscale"]
 # COPY ["config.yaml", "/etc/headscale/config.yaml"]
-COPY ["vps-headscale", "/usr/sbin/vps-headscale"]
+COPY ["vps-headscale", "/usr/local/bin"]
 
 ENTRYPOINT ["/bin/bash", "-c", "vps-headscale start"]

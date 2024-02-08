@@ -46,7 +46,7 @@ start() {
 
   # 启动headscale服务
   echo 'start headscale'
-  headscale serve &
+  headscale serve >/var/log/headscale/serve.log 2>&1 &
   headscale_pid=$!
 
   # 启动组网和sshd服务

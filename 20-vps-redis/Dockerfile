@@ -12,6 +12,6 @@ RUN set -uex \
 
 # COPY ["redis.conf", "/etc/redis.conf"]
 
-COPY ["vps-redis", "/usr/sbin/vps-redis"]
+COPY ["vps-redis", "/usr/local/bin"]
 
 ENTRYPOINT ["/bin/bash", "-c", "vps-redis start"]

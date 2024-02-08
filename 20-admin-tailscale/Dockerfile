@@ -1,7 +1,8 @@
 FROM fengwk/vps-tailscale
 
 # mysql client
-RUN pip install -U mycli
+RUN set -uex \
+    && pip install -U mycli
 
 # redis client
 ADD ["redis-stable.tar.gz", "/usr/local/src"]

@@ -1,7 +1,8 @@
 FROM almalinux:9
 
 # 安装基础的运维工具
-RUN echo -e "\n\nalias ll='ls -lh --color=auto'\nalias ls='ls --color=auto'" >> /root/.bashrc \
+RUN set -uex \
+    && echo -e "\n\nalias ll='ls -lh --color=auto'\nalias ls='ls --color=auto'" >> /root/.bashrc \
     && dnf update -y \
     && dnf install -y epel-release \
     && dnf install -y iproute procps-ng neovim git gcc make which bind-utils python pip inotify-tools \
@@ -14,6 +15,6 @@ RUN echo -e "\n\nalias ll='ls -lh --color=auto'\nalias ls='ls --color=auto'" >> 
 # nvim配置
 COPY ["nvim", "/root/.config/nvim"]
 # vps-almalinux脚本
-COPY ["vps-almalinux", "/usr/sbin/vps-almalinux"]
+COPY ["vps-almalinux", "/usr/local/bin"]
 
 CMD ["/bin/bash"]
