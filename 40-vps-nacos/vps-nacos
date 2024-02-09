@@ -1,0 +1,40 @@
+#!/bin/bash
+
+cleanup() {
+  echo 'Nacos stopping...'
+  /usr/local/nacos/bin/shutdown.sh
+  nacos_pid=$(ps -ef | grep java | grep nacos | grep -v grep | awk '{print $2}')
+  while ps -p $nacos_pid > /dev/null 2>&1; do
+    sleep 1
+  done
+  echo 'Nacos stoped'
+
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
+}
+
+start() {
+  trap cleanup SIGTERM
+
+  echo 'Vps tailscale server starting...'
+  vps-tailscale-server start
+  echo 'Vps tailscale server started'
+
+  echo 'Nacos starting...'
+  /usr/local/nacos/bin/startup.sh -m standalone
+  nacos_pid=$(ps -ef | grep java | grep nacos | grep -v grep | awk '{print $2}')
+  echo "Wait nacos: $nacos_pid"
+  while ps -p $nacos_pid > /dev/null 2>&1; do
+    sleep 1
+  done
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac

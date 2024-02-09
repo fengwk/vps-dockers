@@ -4,18 +4,18 @@
 calibre_web_pid=0
 
 cleanup() {
-  echo "cleanup vps-calibre-web"
-
   # 停止headscale服务
+  echo 'Calibre web stopping...'
   if ps -p $calibre_web_pid > /dev/null 2>&1; then
-    echo "kill calibre-web: $calibre_web_pid"
     kill $calibre_web_pid
     wait $calibre_web_pid
   fi
+  echo 'Calibre web stopped'
 
   # 先停止组网和sshd服务
-  echo 'stop vps-tailscale-server'
+  echo 'Vps tailscale server stopping...'
   vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -23,11 +23,13 @@ start() {
   trap cleanup SIGTERM
 
   # 启动组网和sshd服务
-  echo 'start vps-tailscale-server'
+  echo 'Vps tailscale server starting...'
   vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 初始化
   if [ ! -d /usr/local/calibre-web/logs ]; then
+    echo 'Calibre web log dir not exists, create it.'
     install -m 755 -d /usr/local/calibre-web/logs
   fi
   # if [ -f /usr/local/tmp/metadata.db ]; then
@@ -36,13 +38,13 @@ start() {
 
   # 启动calibre-web服务
   # https://github.com/janeczku/calibre-web/wiki/Command-Line-Interface#command-line-options
-  echo 'start calibre-web'
+  echo 'Calibre web starting...'
   cps &
   calibre_web_pid=$!
 
   # 等待headscale服务退出
   if ps -p $calibre_web_pid > /dev/null 2>&1; then
-    echo "wait calibre-web: $calibre_web_pid"
+    echo "Wait calibre web: $calibre_web_pid"
     wait $calibre_web_pid
   fi
 }

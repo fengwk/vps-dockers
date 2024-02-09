@@ -7,19 +7,18 @@ fi
 v2ray_pid=0
 
 cleanup() {
-  echo 'cleanup vps-v2ray'
-
   # 停止v2ray服务
-  echo 'stop v2ray'
+  echo 'V2ray stopping...'
   if ps -p $v2ray_pid > /dev/null 2>&1; then
-    echo "kill v2ray: $v2ray_pid"
     kill $v2ray_pid
     wait $v2ray_pid
   fi
+  echo 'V2ray stopped'
 
   # 停止组网和sshd服务
-  echo 'stop vps-tailscale-server'
+  echo 'Vps tailscale server stopping...'
   vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -28,21 +27,22 @@ start() {
 
   # 初始化
   if [ ! -d "$VPS_V2RAY_LOG_DIR" ]; then
+    echo 'V2ray log dir not exists, create it.'
     install -m 755 -d "$VPS_V2RAY_LOG_DIR"
   fi
 
   # 启动组网和sshd服务
-  echo 'start vps-tailscale-server'
+  echo 'Vps tailscale server starting...'
   vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 启动v2ray服务
-  echo 'start v2ray'
+  echo 'V2ray starting...'
   /usr/local/bin/v2ray run -config /usr/local/etc/v2ray/config.json &
   v2ray_pid=$!
-
   # 等待v2ray服务退出
   if ps -p $v2ray_pid > /dev/null 2>&1; then
-    echo "wait v2ray: $v2ray_pid"
+    echo "Wait v2ray: $v2ray_pid"
     wait $v2ray_pid
   fi
 }

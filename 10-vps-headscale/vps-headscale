@@ -15,14 +15,16 @@ headscale_pid=0
 
 cleanup() {
   # 先停止组网和sshd服务，否则headscale服务停止组网将无法退出
-  echo 'stop vps-tailscale-server'
+  echo 'Vps tailscale server stopping...'
   vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 
   # 停止headscale服务
+  echo 'Headscale stopping...'
   if ps -p $headscale_pid > /dev/null 2>&1; then
-    echo "kill headscale: $headscale_pid"
     kill $headscale_pid
   fi
+  echo 'Headscale stopped'
 }
 
 start() {
@@ -45,17 +47,18 @@ start() {
   # fi
 
   # 启动headscale服务
-  echo 'start headscale'
+  echo 'Headscale starting...'
   headscale serve >/var/log/headscale/serve.log 2>&1 &
   headscale_pid=$!
 
   # 启动组网和sshd服务
-  echo 'start vps-tailscale-server'
+  echo 'Vps tailscale server starting...'
   vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 等待headscale服务退出
   if ps -p $headscale_pid > /dev/null 2>&1; then
-    echo "wait headscale: $headscale_pid"
+    echo "Wait headscale: $headscale_pid"
     wait $headscale_pid
   fi
 }

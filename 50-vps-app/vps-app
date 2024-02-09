@@ -3,28 +3,20 @@
 # 环境变量
 # APP_REPO app仓库地址
 
-pull_and_build() {
-  if [ ! -d /usr/local/app ]; then
-    set -uex
-    # 设置GIT_SSH_COMMAND避免git clone过程中出现yes/no的ssh询问
-    # export GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
-    # clone app仓库
-    git clone $APP_REPO /usr/local/app
-    # 构建app
-    cd /usr/local/app
-    /usr/local/app/scripts/app env
-    /usr/local/app/scripts/app build
-  fi
-}
-
 cleanup() {
   # 停止应用
-  echo 'stop vps-app'
+  echo 'App stopping...'
   /usr/local/app/scripts/app stop
+  app_pid=$(/usr/local/app/scripts/app pid)
+  if [ -n "$app_pid" ]; then
+    wait $app_pid
+  fi
+  echo 'App stopped'
 
   # 停止组网和sshd服务
-  echo 'stop vps-tailscale-server'
+  echo 'Vps tailscale server stopping...'
   vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -32,18 +24,33 @@ start() {
   trap cleanup SIGTERM
 
   # 启动组网和sshd服务
-  echo "start vps-tailscale-server"
+  echo "Vps tailscale server starting..."
   vps-tailscale-server start
+  echo "Vps tailscale server started"
 
   # 必须在vps-tailscale-server完成初始化后运行
   # 此时ssh密钥已正确被设置
-  pull_and_build
+  if [ ! -d /usr/local/app ]; then
+    set -e
+    # 设置GIT_SSH_COMMAND避免git clone过程中出现yes/no的ssh询问
+    # export GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
+    # clone app仓库
+    echo "Git clone from $APP_REPO"
+    git clone $APP_REPO /usr/local/app
+    echo 'Git clone done'
+    # 构建app
+    echo 'App building...'
+    cd /usr/local/app
+    /usr/local/app/scripts/app env
+    /usr/local/app/scripts/app build
+    echo 'App build done'
+  fi
 
-  echo 'start vps-app'
+  echo 'App starting...'
   /usr/local/app/scripts/app start
   app_pid=$(/usr/local/app/scripts/app pid)
   if [ -n "$app_pid" ]; then
-    echo "wait app_pid: $app_pid"
+    echo "Wait app pid: $app_pid"
     wait $app_pid
   fi
 }

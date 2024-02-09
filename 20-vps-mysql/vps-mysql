@@ -14,26 +14,26 @@ if [ -z "$VPS_MYSQL_HOME" ]; then
 fi
 
 cleanup() {
-  echo 'cleanup vps-mysql'
-
   # 停止mysqld
   pid_file=$(get_cnf_value 'pid_file' 'pid-file')
-  echo "get pid_file: $pid_file"
+  echo "Get pid_file: $pid_file"
 
   mysqld_pid=$(cat "$pid_file" 2>/dev/null)
-  echo "get mysqld_pid: $mysqld_pid"
+  echo "Get mysqld_pid: $mysqld_pid"
 
+  echo 'Mysqld stopping...'
   if ps -p $mysqld_pid > /dev/null 2>&1; then
-    echo "kill mysqld: $mysqld_pid"
     kill $mysqld_pid
     while ps -p $mysqld_pid > /dev/null 2>&1; do
       sleep 1
     done
   fi
+  echo 'Mysqld stopped'
 
   # 停止组网和sshd服务
-  echo "stop vps-tailscale-server"
+  echo 'Vps tailscale server stopping...'
   vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 get_cnf_value() {
@@ -68,8 +68,9 @@ start() {
   trap cleanup SIGTERM
 
   # 启动组网和sshd服务
-  echo "start vps-tailscale-server"
+  echo 'Vps tailscale server starting...'
   vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 如果没有初始化过则初始化数据目录
   # https://dev.mysql.com/doc/refman/5.7/en/data-directory-initialization.html
@@ -78,7 +79,7 @@ start() {
       first_init=true
   fi
   if $first_init; then
-    echo "mysqld initialize..."
+    echo "Mysqld init..."
     chown -R mysql:mysql "$VPS_MYSQL_HOME"
     if [ ! -d "$datadir" ]; then
       install -o mysql -g mysql -m 755 -d "$datadir"
@@ -88,7 +89,7 @@ start() {
       install -o mysql -g mysql -m 755 -d "$log_error_dir"
     fi
     mysqld --defaults-file="$VPS_MYSQL_MY_CNF" --initialize --user=mysql
-    echo "mysqld initialize done"
+    echo "Mysqld init done"
   fi
 
   # 启动mysql
@@ -96,18 +97,18 @@ start() {
   mysqld_safe_pid=$!
 
   # 等待mysql启动
-  echo "wait mysqld running..."
+  echo 'Wait mysqld running...'
   sleep 10
 
   # 如果是首次执行则要执行初始化sql
   if $first_init && [ -f "$VPS_MYSQL_INIT_SQL" ]; then
-    echo "execute vps mysql init sql"
+    echo "Execute mysql init sql..."
     tmp_pwd=$(grep 'A temporary password' "$log_error" | tail -1 | awk -F 'root@localhost:' '{print $2}' | awk '{print $1}')
     mysql -uroot -p"$tmp_pwd" --connect-expired-password -e "source $VPS_MYSQL_INIT_SQL"
-    echo "execute vps mysql init sql done"
+    echo "Execute mysql init sql done"
   fi
 
-  echo "wait mysqld_safe_pid: $mysqld_safe_pid"
+  echo "Wait mysqld safe: $mysqld_safe_pid"
   wait $mysqld_safe_pid
 }
 

@@ -16,18 +16,18 @@ fi
 redis_server_pid=0
 
 cleanup() {
-  echo 'vps-redis cleanup'
-
   # 停止redis-server
-  echo 'stop redis-server'
+  echo 'Redis server stopping...'
   if ps -p $redis_server_pid > /dev/null 2>&1; then
     kill $redis_server_pid
     wait $redis_server_pid
   fi
+  echo 'Redis server stopped'
 
   # 停止组网和sshd服务
-  echo 'stop vps-tailscale-server'
+  echo 'Vps tailscale server stopping...'
   vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -35,24 +35,26 @@ start() {
   trap cleanup SIGTERM
 
   # 启动组网和sshd服务
-  echo 'start vps-tailscale-server'
+  echo 'Vps tailscale server starting...'
   vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 初始化
   if [ ! -d "$VPS_REDIS_DATA_DIR" ]; then
+    echo 'Redis data dir not exists, create it.'
     install -m 755 -d "$VPS_REDIS_DATA_DIR"
   fi
   vps_redis_log_dir="$(dirname "$VPS_REDIS_LOG")"
   if [ ! -d "$vps_redis_log_dir" ]; then
+    echo 'Redis log dir not exists, create it.'
     install -m 755 -d "$vps_redis_log_dir"
   fi
 
   # 启动redis-server
-  echo 'start redis-server'
+  echo 'Redis server starting...'
   redis-server "$VPS_REDIS_CONFIG" &
   redis_server_pid=$!
-
-  echo "wait redis-server: $redis_server_pid"
+  echo "Wait redis server: $redis_server_pid"
   wait $redis_server_pid
 }
 

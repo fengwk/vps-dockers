@@ -8,21 +8,20 @@ if [ -z "$VPS_NGINX_PID_FILE" ]; then
 fi
 
 cleanup() {
-  echo 'cleanup vps-nginx'
-
   # 停止nginx服务
-  echo 'stop vps-nginx'
+  echo 'Nginx stopping...'
   nginx -s stop
-
   # 等待nginx服务结束
   nginx_pid=$(cat "$VPS_NGINX_PID_FILE" 2>/dev/null)
   while ps -p $nginx_pid > /dev/null 2>&1; do
     sleep 1
   done
+  echo 'Nginx stopped'
 
   # 停止组网和sshd服务
-  echo 'stop vps-tailscale-server'
+  echo 'Vps tailscale server stopping...'
   vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -30,23 +29,24 @@ start() {
   trap cleanup SIGTERM
 
   # 启动组网和sshd服务
-  echo "start vps-tailscale-server"
+  echo 'Vps tailscale server starting...'
   vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 初始化
   if [ ! -d "$VPS_NGINX_LOG_DIR" ]; then
+    echo 'Nginx log dir not exists, create it.'
     install -m 755 -d "$VPS_NGINX_LOG_DIR"
   fi
 
   # 启动nginx服务
-  echo "start vps-nginx"
+  echo 'Nginx starting...'
   nginx
-
   # 等待nginx服务结束
   nginx_pid=$(cat "$VPS_NGINX_PID_FILE" 2>/dev/null)
-  echo "wait nginx: $nginx_pid"
+  echo "Wait nginx: $nginx_pid"
   while ps -p $nginx_pid > /dev/null 2>&1; do
-    sleep 3
+    sleep 1
   done
 }
 
