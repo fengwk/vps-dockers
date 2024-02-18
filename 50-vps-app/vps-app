@@ -8,9 +8,9 @@ cleanup() {
   echo 'App stopping...'
   /usr/local/app/scripts/app stop
   app_pid=$(/usr/local/app/scripts/app pid)
-  if [ -n "$app_pid" ]; then
-    wait $app_pid
-  fi
+  while ps -p $app_pid > /dev/null 2>&1; do
+    sleep 1
+  done
   echo 'App stopped'
 
   # 停止组网和sshd服务
@@ -49,10 +49,10 @@ start() {
   echo 'App starting...'
   /usr/local/app/scripts/app start
   app_pid=$(/usr/local/app/scripts/app pid)
-  if [ -n "$app_pid" ]; then
-    echo "Wait app pid: $app_pid"
-    wait $app_pid
-  fi
+  echo "Wait app pid: $app_pid"
+  while ps -p $app_pid > /dev/null 2>&1; do
+    sleep 1
+  done
 }
 
 case "$1" in
