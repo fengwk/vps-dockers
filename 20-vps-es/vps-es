@@ -1,0 +1,44 @@
+#!/bin/bash
+
+es_pid=0
+
+cleanup() {
+  echo "Es stopping: $es_pid"
+  if ps -p $es_pid > /dev/null 2>&1; then
+    kill $es_pid
+    wait $es_pid
+  fi
+  echo 'Es stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
+}
+
+start() {
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo 'Vps tailscale server starting...'
+  vps-tailscale-server start
+  echo 'Vps tailscale server started'
+
+  # 启动es
+  echo 'Es starting...'
+  su - es /bin/bash -c '/home/es/es/bin/elasticsearch' &
+  es_pid=$!
+
+  echo "Wait es: $es_pid"
+  wait $es_pid
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac

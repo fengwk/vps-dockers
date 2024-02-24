@@ -16,4 +16,6 @@ ADD ["pinyin-8.12.2.tar.gz", "/home/es/es/plugins"]
 RUN set -uex \
     && chown -R es:es /home/es
 
-CMD ["/bin/bash"]
+COPY ["vps-es", "/usr/local/bin"]
+
+ENTRYPOINT ["/bin/bash", "-c", "vps-es start"]
