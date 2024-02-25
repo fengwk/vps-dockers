@@ -1,0 +1,47 @@
+#!/bin/bash
+
+cerebro_pid=0
+
+cleanup() {
+  echo "Cerebro stopping: $cerebro_pid"
+  if ps -p $cerebro_pid > /dev/null 2>&1; then
+    kill $cerebro_pid
+    wait $cerebro_pid
+  fi
+  echo 'Cerebro stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
+}
+
+start() {
+  # 修改所有者，如果存在挂载目录需要在脚本中进行修改
+  chown -R cerebro:cerebro /home/cerebro
+
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo 'Vps tailscale server starting...'
+  vps-tailscale-server start
+  echo 'Vps tailscale server started'
+
+  # 启动cerebro
+  echo 'Cerebro starting...'
+  su - cerebro /bin/bash -c "env JAVA_OPTS='--add-opens java.base/java.lang=ALL-UNNAMED' /home/cerebro/cerebro/bin/cerebro" &
+  cerebro_pid=$!
+
+  echo "Wait cerebro: $cerebro_pid"
+  wait $cerebro_pid
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac
