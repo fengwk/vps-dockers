@@ -17,6 +17,9 @@ cleanup() {
 }
 
 start() {
+  # 修改所有者，如果存在挂载目录需要在脚本中进行修改
+  chown -R kibana:kibana /home/kibana
+
   # 注册清理函数
   trap cleanup SIGTERM
 
