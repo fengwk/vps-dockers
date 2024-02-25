@@ -32,7 +32,7 @@ start() {
 
   # 启动es
   echo 'Es starting...'
-  su - es /bin/bash -c '/home/es/es/bin/elasticsearch' &
+  su - es /bin/bash -c "/home/es/es/bin/elasticsearch -d $ES_OPTS"
   es_pid=$!
 
   echo "Wait es: $es_pid"
