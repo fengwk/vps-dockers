@@ -30,7 +30,7 @@ start() {
 
   # 启动kibana
   echo 'Kibana starting...'
-  su - kibana /bin/bash -c "/home/kibana/kibana/bin/kibana -d $KIBANA_OPTS"
+  su - kibana /bin/bash -c "/home/kibana/kibana/bin/kibana" &
   kibana_pid=$!
 
   echo "Wait kibana: $kibana_pid"
