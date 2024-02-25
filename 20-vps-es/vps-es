@@ -17,6 +17,11 @@ cleanup() {
 }
 
 start() {
+  # 需要特权--privileged
+  sysctl -w vm.max_map_count=262144
+  sysctl -w vm.swappiness=1
+  sysctl -w net.core.somaxconn=2048
+
   # 注册清理函数
   trap cleanup SIGTERM
 
