@@ -46,12 +46,12 @@ apply_authkey_with_ephemeral() {
 
 # 检查指定节点$1是否在线
 exists_online_node() {
-  exec_headscale node list -u "$HEADSCALE_NS" --output 'json-line' 2>&1 | python -c "import sys,json;ret=json.load(sys.stdin);[print(item.get('name', '') + (item.get('online', False) and '@online' or '@offline')) for item in ret]" | grep -Eq "^$1@online$"
+  exec_headscale node list -u "$HEADSCALE_NS" --output 'json-line' 2>&1 | python -c "import sys,json;ret=json.load(sys.stdin);[print(item.get('given_name', '') + (item.get('online', False) and '@online' or '@offline')) for item in ret]" | grep -Eq "^$1@online$"
 }
 
 # 如果指定节点$1不在线则删除
 delete_offline_node() {
-  offline_node_id=$(exec_headscale node list -u "$HEADSCALE_NS" --output 'json-line' 2>&1 | python -c "import sys,json;ret=json.load(sys.stdin);[print(str(item.get('id', '')) + '@' + item.get('name', '') + (item.get('online', False) and '@online' or '@offline')) for item in ret]" | grep "@$1@offline$" | awk -F '@' '{print $1}')
+  offline_node_id=$(exec_headscale node list -u "$HEADSCALE_NS" --output 'json-line' 2>&1 | python -c "import sys,json;ret=json.load(sys.stdin);[print(str(item.get('id', '')) + '@' + item.get('given_name', '') + (item.get('online', False) and '@online' or '@offline')) for item in ret]" | grep "@$1@offline$" | awk -F '@' '{print $1}')
   if [ -n "${offline_node_id}" ]; then
     exec_headscale node delete -i $offline_node_id --force
   fi
