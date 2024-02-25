@@ -80,7 +80,7 @@ start() {
   fi
   if $first_init; then
     echo "Mysqld init..."
-    chown -R mysql:mysql "$VPS_MYSQL_HOME"
+    chown -Rf mysql:mysql "$VPS_MYSQL_HOME"
     if [ ! -d "$datadir" ]; then
       install -o mysql -g mysql -m 755 -d "$datadir"
     fi

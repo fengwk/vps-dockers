@@ -24,7 +24,7 @@ start() {
   sysctl -w net.core.somaxconn=2048
 
   # 修改所有者，如果存在挂载目录需要在脚本中进行修改
-  chown -R es:es /home/es
+  chown -Rf es:es /home/es
 
   # 注册清理函数
   trap cleanup SIGTERM
