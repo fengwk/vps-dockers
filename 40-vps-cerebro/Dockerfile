@@ -11,4 +11,6 @@ RUN set -uex \
 
 COPY ["vps-cerebro", "/usr/local/bin"]
 
+WORKDIR /home/cerebro
+
 ENTRYPOINT ["/bin/bash", "-c", "vps-cerebro start"]

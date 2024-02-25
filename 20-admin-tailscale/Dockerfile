@@ -14,4 +14,6 @@ RUN set -uex \
     && make install \
     && make test
 
+WORKDIR /root
+
 CMD ["/bin/bash", "-c", "vps-tailscale start-and-wait"]

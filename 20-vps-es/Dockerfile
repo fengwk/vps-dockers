@@ -18,4 +18,6 @@ RUN set -uex \
 
 COPY ["vps-es", "/usr/local/bin"]
 
+WORKDIR /home/es
+
 ENTRYPOINT ["/bin/bash", "-c", "vps-es start"]

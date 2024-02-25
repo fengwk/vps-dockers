@@ -13,4 +13,6 @@ RUN set -uex \
 
 COPY ["vps-kibana", "/usr/local/bin"]
 
+WORKDIR /home/kibana
+
 ENTRYPOINT ["/bin/bash", "-c", "vps-kibana start"]
