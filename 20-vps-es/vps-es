@@ -1,12 +1,13 @@
 #!/bin/bash
 
-es_pid=0
-
 cleanup() {
-  echo "Es stopping: $es_pid"
+  echo "Es stopping"
+  es_pid=$(ps -ef | grep Elasticsearch | grep -v grep | awk '{print $2}')
   if ps -p $es_pid > /dev/null 2>&1; then
     kill $es_pid
-    wait $es_pid
+    while ps -p $es_pid > /dev/null 2>&1; do
+      sleep 1
+    done
   fi
   echo 'Es stopped'
 
@@ -33,10 +34,12 @@ start() {
   # 启动es
   echo 'Es starting...'
   su - es /bin/bash -c "/home/es/es/bin/elasticsearch -d $ES_OPTS"
-  es_pid=$!
 
+  es_pid=$(ps -ef | grep Elasticsearch | grep -v grep | awk '{print $2}')
   echo "Wait es: $es_pid"
-  wait $es_pid
+  while ps -p $es_pid > /dev/null 2>&1; do
+    sleep 1
+  done
 }
 
 case "$1" in
