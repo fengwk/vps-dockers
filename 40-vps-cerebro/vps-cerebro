@@ -30,7 +30,7 @@ start() {
 
   # 启动cerebro
   echo 'Cerebro starting...'
-  su - cerebro /bin/bash -c "env JAVA_OPTS='--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED' /home/cerebro/cerebro/bin/cerebro" &
+  su - cerebro /bin/bash -c "env JAVA_OPTS='--add-opens java.base/sun.net.www.protocol.file=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED' /home/cerebro/cerebro/bin/cerebro" &
   cerebro_pid=$!
 
   echo "Wait cerebro: $cerebro_pid"
