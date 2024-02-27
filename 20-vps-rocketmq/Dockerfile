@@ -9,6 +9,10 @@ RUN set -uex \
     && mv /home/rocketmq/rocketmq-all-4.9.4-bin-release /home/rocketmq/rocketmq \
     && chown -R rocketmq:rocketmq /home/rocketmq
 
+COPY ["vps-rocketmq-broker", "/usr/local/bin"]
+COPY ["vps-rocketmq-namesrv", "/usr/local/bin"]
+
 WORKDIR /home/rocketmq
 
-CMD ["/bin/bash"]
+# CMD ["/bin/bash"]
+ENTRYPOINT ["/bin/bash"]
