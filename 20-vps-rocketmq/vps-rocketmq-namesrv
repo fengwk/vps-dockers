@@ -12,9 +12,9 @@ cleanup() {
   echo 'Namesrv stopped'
 
   # 停止组网和sshd服务
-  # echo 'Vps tailscale server stopping...'
-  # vps-tailscale-server stop
-  # echo 'Vps tailscale server stopped'
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -25,9 +25,9 @@ start() {
   trap cleanup SIGTERM
 
   # 启动组网和sshd服务
-  # echo 'Vps tailscale server starting...'
-  # vps-tailscale-server start
-  # echo 'Vps tailscale server started'
+  echo 'Vps tailscale server starting...'
+  vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 启动namesrv
   echo 'Namesrv starting...'

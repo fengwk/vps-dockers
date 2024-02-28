@@ -14,5 +14,4 @@ COPY ["vps-rocketmq-namesrv", "/usr/local/bin"]
 
 WORKDIR /home/rocketmq
 
-# CMD ["/bin/bash"]
 ENTRYPOINT ["/bin/bash"]
