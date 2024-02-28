@@ -1,20 +1,20 @@
 #!/bin/bash
 
+mqbin_dir='/home/rocketmq/rocketmq/bin'
+
 cleanup() {
   echo "Namesrv stopping"
   namesrv_pid=$(ps -ef | grep java | grep org.apache.rocketmq.namesrv.NamesrvStartup | awk '{print $2}')
-  if ps -p $namesrv_pid > /dev/null 2>&1; then
-    kill $namesrv_pid
-    while ps -p $namesrv_pid > /dev/null 2>&1; do
-      sleep 1
-    done
-  fi
+  $mqbin_dir/mqshutdown namesrv
+  while ps -p $namesrv_pid > /dev/null 2>&1; do
+    sleep 1
+  done
   echo 'Namesrv stopped'
 
   # 停止组网和sshd服务
-  # echo 'Vps tailscale server stopping...'
-  # vps-tailscale-server stop
-  # echo 'Vps tailscale server stopped'
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -25,14 +25,14 @@ start() {
   trap cleanup SIGTERM
 
   # 启动组网和sshd服务
-  # echo 'Vps tailscale server starting...'
-  # vps-tailscale-server start
-  # echo 'Vps tailscale server started'
+  echo 'Vps tailscale server starting...'
+  vps-tailscale-server start
+  echo 'Vps tailscale server started'
 
   # 启动namesrv
   echo 'Namesrv starting...'
   root_env=$(xargs -0 < /proc/1/environ)
-  su - rocketmq /bin/bash -c "env $root_env /home/rocketmq/rocketmq/bin/mqnamesrv" &
+  su - rocketmq /bin/bash -c "env $root_env $mqbin_dir/mqnamesrv" &
 
   # 延迟等待启动
   sleep 3
