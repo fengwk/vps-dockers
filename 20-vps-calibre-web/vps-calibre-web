@@ -8,14 +8,7 @@ cleanup() {
   echo 'Calibre web stopping...'
   if ps -p $calibre_web_pid > /dev/null 2>&1; then
     kill $calibre_web_pid
-    wait $calibre_web_pid
   fi
-  echo 'Calibre web stopped'
-
-  # 先停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -47,6 +40,12 @@ start() {
     echo "Wait calibre web: $calibre_web_pid"
     wait $calibre_web_pid
   fi
+  echo 'Calibre web stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

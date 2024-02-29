@@ -20,14 +20,7 @@ cleanup() {
   echo 'Redis server stopping...'
   if ps -p $redis_server_pid > /dev/null 2>&1; then
     kill $redis_server_pid
-    wait $redis_server_pid
   fi
-  echo 'Redis server stopped'
-
-  # 停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -56,6 +49,12 @@ start() {
   redis_server_pid=$!
   echo "Wait redis server: $redis_server_pid"
   wait $redis_server_pid
+  echo 'Redis server stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

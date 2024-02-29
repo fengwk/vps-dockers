@@ -6,14 +6,7 @@ cleanup() {
   echo "Cerebro stopping: $cerebro_pid"
   if ps -p $cerebro_pid > /dev/null 2>&1; then
     kill $cerebro_pid
-    wait $cerebro_pid
   fi
-  echo 'Cerebro stopped'
-
-  # 停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -30,11 +23,18 @@ start() {
 
   # 启动cerebro
   echo 'Cerebro starting...'
-  su - cerebro /bin/bash -c "env JAVA_OPTS='--add-opens java.base/sun.net.www.protocol.file=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED' /home/cerebro/cerebro/bin/cerebro" &
+  # su cerebro /bin/bash -c "env JAVA_OPTS='--add-opens java.base/sun.net.www.protocol.file=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED' /home/cerebro/cerebro/bin/cerebro" &
+  su cerebro /bin/bash -c "/home/cerebro/cerebro/bin/cerebro" &
   cerebro_pid=$!
 
   echo "Wait cerebro: $cerebro_pid"
   wait $cerebro_pid
+  echo 'Cerebro stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

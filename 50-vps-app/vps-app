@@ -7,16 +7,6 @@ cleanup() {
   # 停止应用
   echo 'App stopping...'
   /usr/local/app/scripts/app stop
-  app_pid=$(/usr/local/app/scripts/app pid)
-  while ps -p $app_pid > /dev/null 2>&1; do
-    sleep 1
-  done
-  echo 'App stopped'
-
-  # 停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -53,6 +43,12 @@ start() {
   while ps -p $app_pid > /dev/null 2>&1; do
     sleep 1
   done
+  echo 'App stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

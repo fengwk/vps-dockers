@@ -6,14 +6,7 @@ cleanup() {
   echo "Kibana stopping: $kibana_pid"
   if ps -p $kibana_pid > /dev/null 2>&1; then
     kill $kibana_pid
-    wait $kibana_pid
   fi
-  echo 'Kibana stopped'
-
-  # 停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -30,11 +23,17 @@ start() {
 
   # 启动kibana
   echo 'Kibana starting...'
-  su - kibana /bin/bash -c "/home/kibana/kibana/bin/kibana" &
+  su kibana /bin/bash -c "/home/kibana/kibana/bin/kibana" &
   kibana_pid=$!
 
   echo "Wait kibana: $kibana_pid"
   wait $kibana_pid
+  echo 'Kibana stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

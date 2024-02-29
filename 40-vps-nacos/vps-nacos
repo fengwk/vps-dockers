@@ -3,15 +3,6 @@
 cleanup() {
   echo 'Nacos stopping...'
   /usr/local/nacos/bin/shutdown.sh
-  nacos_pid=$(ps -ef | grep java | grep nacos | grep -v grep | awk '{print $2}')
-  while ps -p $nacos_pid > /dev/null 2>&1; do
-    sleep 1
-  done
-  echo 'Nacos stoped'
-
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -28,6 +19,11 @@ start() {
   while ps -p $nacos_pid > /dev/null 2>&1; do
     sleep 1
   done
+  echo 'Nacos stoped'
+
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

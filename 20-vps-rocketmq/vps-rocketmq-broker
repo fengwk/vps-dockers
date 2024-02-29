@@ -4,17 +4,7 @@ mqbin_dir='/home/rocketmq/rocketmq/bin'
 
 cleanup() {
   echo "Broker stopping"
-  broker_pid=$(ps -ef | grep java | grep org.apache.rocketmq.broker.BrokerStartup | awk '{print $2}')
   $mqbin_dir/mqshutdown broker
-  while ps -p $broker_pid > /dev/null 2>&1; do
-    sleep 1
-  done
-  echo 'Broker stopped'
-
-  # 停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -31,8 +21,7 @@ start() {
 
   # 启动namesrv
   echo 'Broker starting...'
-  root_env=$(xargs -0 < /proc/1/environ)
-  su - rocketmq /bin/bash -c "env $root_env $mqbin_dir/mqbroker -c $BROKER_CONF" &
+  su rocketmq /bin/bash -c "$mqbin_dir/mqbroker -c $BROKER_CONF" &
 
   # 延迟等待启动
   sleep 3
@@ -42,6 +31,12 @@ start() {
   while ps -p $broker_pid > /dev/null 2>&1; do
     sleep 1
   done
+  echo 'Broker stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

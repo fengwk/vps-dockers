@@ -5,16 +5,7 @@ cleanup() {
   es_pid=$(ps -ef | grep Elasticsearch | grep -v grep | awk '{print $2}')
   if ps -p $es_pid > /dev/null 2>&1; then
     kill $es_pid
-    while ps -p $es_pid > /dev/null 2>&1; do
-      sleep 1
-    done
   fi
-  echo 'Es stopped'
-
-  # 停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -36,13 +27,20 @@ start() {
 
   # 启动es
   echo 'Es starting...'
-  su - es /bin/bash -c "/home/es/es/bin/elasticsearch -d $ES_OPTS"
+  su es /bin/bash -c "/home/es/es/bin/elasticsearch -d $ES_OPTS"
 
+  # 等待es进程结束
   es_pid=$(ps -ef | grep Elasticsearch | grep -v grep | awk '{print $2}')
   echo "Wait es: $es_pid"
   while ps -p $es_pid > /dev/null 2>&1; do
     sleep 1
   done
+  echo 'Es stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

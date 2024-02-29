@@ -11,17 +11,6 @@ cleanup() {
   # 停止nginx服务
   echo 'Nginx stopping...'
   nginx -s stop
-  # 等待nginx服务结束
-  nginx_pid=$(cat "$VPS_NGINX_PID_FILE" 2>/dev/null)
-  while ps -p $nginx_pid > /dev/null 2>&1; do
-    sleep 1
-  done
-  echo 'Nginx stopped'
-
-  # 停止组网和sshd服务
-  echo 'Vps tailscale server stopping...'
-  vps-tailscale-server stop
-  echo 'Vps tailscale server stopped'
 }
 
 start() {
@@ -48,6 +37,12 @@ start() {
   while ps -p $nginx_pid > /dev/null 2>&1; do
     sleep 1
   done
+  echo 'Nginx stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
 }
 
 case "$1" in

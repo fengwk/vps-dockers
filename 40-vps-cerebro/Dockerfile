@@ -1,4 +1,4 @@
-FROM fengwk/vps-server-jdk17
+FROM fengwk/vps-server-jdk11
 
 RUN set -uex \
     && useradd -m cerebro

@@ -12,6 +12,5 @@ RUN set -uex \
     && ln -s /usr/local/maven/bin/* /usr/local/bin
 
 ENV JAVA_HOME=/usr/local/jdk17
-ENV APP_JAVA_HOME=/usr/local/jdk17
 
 CMD ["/usr/bin/bash"]
