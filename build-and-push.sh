@@ -15,5 +15,7 @@ for dir in $(ls -d */ | sort); do
     docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
     # 推送镜像
     docker push $image_name:$image_tag
+    # 移除所有镜像为下次构建准备空间（解决github构建空间不足问题）
+    docker rmi $(docker image ls -aq)
   fi
 done
