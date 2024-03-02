@@ -1,0 +1,50 @@
+#!/bin/bash
+
+cleanup() {
+  echo "Jupyter notebook stopping"
+  notebook_pid=$(ps -ef | grep python | grep jupyter-notebook | grep -v grep | awk '{print $2}')
+  if ps -p $notebook_pid > /dev/null 2>&1; then
+    kill $notebook_pid
+  fi
+}
+
+start() {
+  # 修改所有者，如果存在挂载目录需要在脚本中进行修改
+  chown -Rf rocketmq:rocketmq /home/rocketmq
+
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo 'Vps tailscale server starting...'
+  vps-tailscale-server start
+  echo 'Vps tailscale server started'
+
+  # 启动notebook
+  echo 'Jupyter notebook starting...'
+  su jupyter /bin/bash -c "cd /home/jupyter && jupyter notebook" &
+
+  # 延迟等待启动
+  sleep 1
+
+  notebook_pid=$(ps -ef | grep python | grep jupyter-notebook | grep -v grep | awk '{print $2}')
+  echo "Wait jupyter notebook: $notebook_pid"
+  while ps -p $notebook_pid > /dev/null 2>&1; do
+    sleep 1
+  done
+  echo 'Jupyter notebook stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac
