@@ -30,13 +30,13 @@ start() {
     # clone app仓库
     echo "Git clone from $APP_REPO"
     git clone $APP_REPO /home/app/app
-    chown -Rf app:app /home/app/app
     echo 'Git clone done'
     # 构建app
     echo 'App building...'
-    su app /bin/bash -c '/home/app/app/scripts/app env'
-    su app /bin/bash -c '/home/app/app/scripts/app build'
+    /home/app/app/scripts/app env
+    /home/app/app/scripts/app build
     echo 'App build done'
+    chown -Rf app:app /home/app/app
   fi
 
   echo 'App starting...'
