@@ -29,7 +29,8 @@ start() {
     # export GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
     # clone app仓库
     echo "Git clone from $APP_REPO"
-    su app /bin/bash -c "git clone $APP_REPO /home/app/app"
+    git clone $APP_REPO /home/app/app
+    chown -Rf app:app /home/app/app
     echo 'Git clone done'
     # 构建app
     echo 'App building...'
