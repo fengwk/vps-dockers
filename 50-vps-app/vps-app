@@ -6,10 +6,13 @@
 cleanup() {
   # 停止应用
   echo 'App stopping...'
-  /usr/local/app/scripts/app stop
+  /home/app/app/scripts/app stop
 }
 
 start() {
+  # 修改所有者，如果存在挂载目录需要在脚本中进行修改
+  chown -Rf app:app /home/app
+
   # 注册清理函数
   trap cleanup SIGTERM
 
@@ -20,25 +23,24 @@ start() {
 
   # 必须在vps-tailscale-server完成初始化后运行
   # 此时ssh密钥已正确被设置
-  if [ ! -d /usr/local/app ]; then
+  if [ ! -d /home/app/app ]; then
     set -e
     # 设置GIT_SSH_COMMAND避免git clone过程中出现yes/no的ssh询问
     # export GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
     # clone app仓库
     echo "Git clone from $APP_REPO"
-    git clone $APP_REPO /usr/local/app
+    git clone $APP_REPO /home/app/app
     echo 'Git clone done'
     # 构建app
     echo 'App building...'
-    cd /usr/local/app
-    /usr/local/app/scripts/app env
-    /usr/local/app/scripts/app build
+    su app /bin/bash -c '/home/app/app/scripts/app env'
+    su app /bin/bash -c '/home/app/app/scripts/app build'
     echo 'App build done'
   fi
 
   echo 'App starting...'
-  /usr/local/app/scripts/app start
-  app_pid=$(/usr/local/app/scripts/app pid)
+  su app /bin/bash -c '/home/app/app/scripts/app start'
+  app_pid=$(/home/app/app/scripts/app pid)
   echo "Wait app pid: $app_pid"
   while ps -p $app_pid > /dev/null 2>&1; do
     sleep 1
