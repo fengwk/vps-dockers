@@ -196,7 +196,9 @@ stop() {
     echo "kill vps-tailscale: $vps_tailscale_pid"
     kill $vps_tailscale_pid
     echo 'wait vps-tailscale stop...'
-    inotifywait -e delete /var/run/vps-tailscale.pid > /dev/null 2>&1
+    while ps -p $vps_tailscale_pid > /dev/null 2>&1; do
+      sleep 1
+    done
   fi
 }
 
