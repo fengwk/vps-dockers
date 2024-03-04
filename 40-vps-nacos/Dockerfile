@@ -12,4 +12,6 @@ RUN set -uex \
 
 ADD ["vps-nacos", "/usr/local/bin"]
 
+WORKDIR /home/nacos
+
 CMD ["/bin/bash", "-c", "vps-nacos start"]
