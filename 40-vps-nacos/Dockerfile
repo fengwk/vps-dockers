@@ -1,10 +1,14 @@
 FROM fengwk/vps-server-jdk17
 
-COPY ["nacos-server-2.2.3.tar.gz.*", "/usr/local/"]
+COPY ["nacos-server-2.2.3.tar.gz.*", "/home/nacos/"]
 
 RUN set -uex \
-    && cat /usr/local/nacos-server-2.2.3.tar.gz.* | tar -xzvC /usr/local \
-    && rm -f /usr/local/nacos-server-2.2.3.tar.gz.*
+    && useradd -m nacos
+
+RUN set -uex \
+    && cat /home/nacos/nacos-server-2.2.3.tar.gz.* | tar -xzvC /home/nacos \
+    && rm -f /home/nacos/nacos-server-2.2.3.tar.gz.* \
+    && chown -Rf nacos:nacos /home/nacos
 
 ADD ["vps-nacos", "/usr/local/bin"]
 

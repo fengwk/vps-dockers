@@ -2,10 +2,12 @@
 
 cleanup() {
   echo 'Nacos stopping...'
-  /usr/local/nacos/bin/shutdown.sh
+  /home/nacos/nacos/bin/shutdown.sh
 }
 
 start() {
+  chown -Rf nacos:nacos /home/nacos
+
   trap cleanup SIGTERM
 
   echo 'Vps tailscale server starting...'
@@ -13,7 +15,7 @@ start() {
   echo 'Vps tailscale server started'
 
   echo 'Nacos starting...'
-  /usr/local/nacos/bin/startup.sh $NACOS_OPTS
+  su nacos /bin/bash -c "/home/nacos/nacos/bin/startup.sh $NACOS_OPTS"
   nacos_pid=$(ps -ef | grep java | grep nacos | grep -v grep | awk '{print $2}')
   echo "Wait nacos: $nacos_pid"
   while ps -p $nacos_pid > /dev/null 2>&1; do
