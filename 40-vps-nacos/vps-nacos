@@ -6,6 +6,12 @@ cleanup() {
 }
 
 start() {
+  if [ -d /home/nacos/conf ]; then
+    if [ -d /home/nacos/nacos/conf ]; then
+      rm -rf /home/nacos/nacos/conf
+    fi
+    cp -r /home/nacos/conf /home/nacos/nacos/conf
+  fi
   chown -Rf nacos:nacos /home/nacos
 
   trap cleanup SIGTERM
