@@ -25,7 +25,7 @@ start() {
   # 延迟等待启动
   sleep 3
 
-  dashboard_pid=$(ps -ef | grep java | grep rocketmq-dashboard | grep -v su | awk '{print $2}')
+  dashboard_pid=$(ps -ef | grep java | grep rocketmq-dashboard | grep -wv su | awk '{print $2}')
   echo "Wait rocketmq dashboard: $dashboard_pid"
   while ps -p $dashboard_pid > /dev/null 2>&1; do
     sleep 1
