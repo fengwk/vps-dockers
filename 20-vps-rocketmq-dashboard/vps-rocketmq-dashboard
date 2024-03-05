@@ -20,7 +20,7 @@ start() {
 
   # 启动namesrv
   echo 'Rocketmq dashboard starting...'
-  su rocketmq /bin/bash -c "java $JAVA_OPTS -jar /home/rocketmq/rocketmq-dashboard-1.0.0.jar $SPRING_BOOT_OPTS" &
+  su rocketmq /bin/bash -c "java $JAVA_OPT -jar /home/rocketmq/rocketmq-dashboard-1.0.0.jar $SPRING_BOOT_OPT" &
 
   # 延迟等待启动
   sleep 3

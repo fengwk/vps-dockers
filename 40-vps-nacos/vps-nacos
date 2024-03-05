@@ -21,7 +21,7 @@ start() {
   echo 'Vps tailscale server started'
 
   echo 'Nacos starting...'
-  su nacos /bin/bash -c "/home/nacos/nacos/bin/startup.sh $NACOS_OPTS"
+  su nacos /bin/bash -c "/home/nacos/nacos/bin/startup.sh $NACOS_OPT"
   nacos_pid=$(ps -ef | grep java | grep nacos | grep -v grep | awk '{print $2}')
   echo "Wait nacos: $nacos_pid"
   while ps -p $nacos_pid > /dev/null 2>&1; do
