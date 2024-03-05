@@ -114,13 +114,14 @@ tailscale_up() {
 
 # 保持组网状态
 keepalive() {
+  sleep 10
   while pgrep tailscaled > /dev/null 2>&1; do
-    sleep 10
     if ! exists_online_node "$TAILSCALE_NODE_NAME"; then
       echo 'tailscale offline, retry up'
       tailscale logout
       tailscale_up
     fi
+    sleep 10
   done
 }
 
