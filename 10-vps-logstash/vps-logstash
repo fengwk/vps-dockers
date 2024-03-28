@@ -1,0 +1,51 @@
+#!/bin/bash
+
+cleanup() {
+  echo "Logstash stopping"
+  logstash_pid=$(ps -fu logstash | grep logstash | grep -v grep | awk '{print $2}')
+  if ps -p $logstash_pid > /dev/null 2>&1; then
+    kill $logstash_pid
+  fi
+}
+
+start() {
+  # 修改所有者，如果存在挂载目录需要在脚本中进行修改
+  chown -Rf logstash:logstash /home/logstash
+
+  # 注册清理函数
+  trap cleanup SIGTERM
+
+  # 启动组网和sshd服务
+  echo 'Vps tailscale server starting...'
+  vps-tailscale-server start
+  echo 'Vps tailscale server started'
+
+  # 启动Logstash
+  echo 'Logstash starting...'
+  chown logstash:logstash $LOGSTASH_CONF
+  chmod 644 $LOGSTASH_CONF
+  su logstash /bin/bash -c "/home/logstash/logstash/bin/logstash -f $LOGSTASH_CONF" &
+
+  # 等待logstash进程结束
+  sleep 3
+  logstash_pid=$(ps -fu logstash | grep logstash | grep -v grep | awk '{print $2}')
+  echo "Wait logstash: $logstash_pid"
+  while ps -p $logstash_pid > /dev/null 2>&1; do
+    sleep 1
+  done
+  echo 'Logstash stopped'
+
+  # 停止组网和sshd服务
+  echo 'Vps tailscale server stopping...'
+  vps-tailscale-server stop
+  echo 'Vps tailscale server stopped'
+}
+
+case "$1" in
+  'start')
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start}"
+    ;;
+esac
