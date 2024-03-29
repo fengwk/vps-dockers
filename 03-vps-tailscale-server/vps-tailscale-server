@@ -16,10 +16,8 @@ start() {
   # 修改所有者，如果存在挂载目录需要在脚本中进行修改
   chown -Rf filebeat:filebeat /home/filebeat
   # 如果存在filebaet配置环境变量则启动filebeat
-  if [ -n "$FILEBEAT_CONF" ]; then
-    chown filebeat:filebeat $FILEBEAT_CONF
-    chmod 644 $FILEBEAT_CONF
-    su filebeat /bin/bash -c "/home/filebeat/filebeat/filebeat -c "$FILEBEAT_CONF"" &
+  if [ -n "$FILEBEAT_USER" ] && [ -n "$FILEBEAT_OPT" ]; then
+    su $FILEBEAT_USER /bin/bash -c "/home/filebeat/filebeat/filebeat $FILEBEAT_OPT" &
   fi
 
   # 启动vps-tailscale完成组网
@@ -37,12 +35,12 @@ stop() {
   # 停止sshd
   echo "stop sshd"
   if [ -f /var/run/sshd.pid ]; then
-      sshd_pid=$(cat /var/run/sshd.pid)
-      kill $sshd_pid
-      # 等待sshd停止
-      while ps -p $sshd_pid > /dev/null 2>&1; do
-          sleep 1
-      done
+    sshd_pid=$(cat /var/run/sshd.pid)
+    kill $sshd_pid
+    # 等待sshd停止
+    while ps -p $sshd_pid > /dev/null 2>&1; do
+      sleep 1
+    done
   fi
 
   # 停止tailscale组网
@@ -52,13 +50,13 @@ stop() {
   fi
 
   # 如果存在filebeat配置环境变量则停止filebeat
-  if [ -n "$FILEBEAT_CONF" ]; then
+  if [ -n "$FILEBEAT_USER" ] && [ -n "$FILEBEAT_OPT" ]; then
     filebeat_pid=$(ps -fu filebeat | grep filebeat | grep -v grep | awk '{print $2}')
     if ps -p $filebeat_pid > /dev/null 2>&1; then
       kill $filebeat_pid
     fi
     while ps -p $filebeat_pid > /dev/null 2>&1; do
-        sleep 1
+      sleep 1
     done
   fi
 }

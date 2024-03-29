@@ -1,9 +1,6 @@
 FROM fengwk/vps-tailscale
 
-RUN set -uex \
-    && useradd -m filebeat
-
-ADD ["filebeat-8.12.2-linux-x86_64.tar.gz", "/home/filebeat"]
+ADD ["filebeat-8.12.2-linux-x86_64.tar.gz", "/usr/local"]
 
 RUN set -uex \
     && dnf update -y \
@@ -12,8 +9,8 @@ RUN set -uex \
     && ssh-keygen -t dsa -N '' -f /etc/ssh/ssh_host_dsa_key \
     && ssh-keygen -t ecdsa -N '' -f /etc/ssh/ssh_host_ecdsa_key \
     && ssh-keygen -t ed25519 -N '' -f /etc/ssh/ssh_host_ed25519_key \
-    && mv /home/filebeat/filebeat-8.12.2-linux-x86_64 /home/filebeat/filebeat \
-    && chown -Rf filebeat:filebeat /home/filebeat
+    && mv /usr/local/filebeat-8.12.2-linux-x86_64 /usr/local/filebeat \
+    && ln -s /usr/local/filebeat/filebeat /usr/local/bin
 
 COPY ["vps-tailscale-server", "/usr/local/bin"]
 
