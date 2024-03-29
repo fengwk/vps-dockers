@@ -22,9 +22,7 @@ start() {
 
   # 启动Logstash
   echo 'Logstash starting...'
-  chown logstash:logstash $LOGSTASH_CONF
-  chmod 644 $LOGSTASH_CONF
-  su logstash /bin/bash -c "/home/logstash/logstash/bin/logstash -f $LOGSTASH_CONF" &
+  su logstash /bin/bash -c "/home/logstash/logstash/bin/logstash $LOGSTASH_OPT" &
 
   # 等待logstash进程结束
   sleep 3

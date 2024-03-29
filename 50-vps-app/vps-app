@@ -40,7 +40,7 @@ start() {
   fi
 
   echo 'App starting...'
-  /home/app/app/scripts/app start
+  su app /bin/bash -c "/home/app/app/scripts/app start"
   app_pid=$(/home/app/app/scripts/app pid)
   echo "Wait app pid: $app_pid"
   while ps -p $app_pid > /dev/null 2>&1; do

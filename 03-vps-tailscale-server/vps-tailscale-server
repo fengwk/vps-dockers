@@ -13,11 +13,14 @@ if [ -z "$HEADSCALE_LOGIN_SERVER" ]; then
 fi
 
 start() {
-  # 修改所有者，如果存在挂载目录需要在脚本中进行修改
-  chown -Rf filebeat:filebeat /home/filebeat
   # 如果存在filebaet配置环境变量则启动filebeat
-  if [ -n "$FILEBEAT_USER" ] && [ -n "$FILEBEAT_OPT" ]; then
-    su $FILEBEAT_USER /bin/bash -c "/home/filebeat/filebeat/filebeat $FILEBEAT_OPT" &
+  if [ -n "$FILEBEAT_OPT" ]; then
+    echo 'start filebeat'
+    if [ -n "$FILEBEAT_USER" ]; then
+      su $FILEBEAT_USER /bin/bash -c "filebeat $FILEBEAT_OPT" &
+    else
+      filebeat $FILEBEAT_OPT &
+    fi
   fi
 
   # 启动vps-tailscale完成组网
@@ -50,9 +53,10 @@ stop() {
   fi
 
   # 如果存在filebeat配置环境变量则停止filebeat
-  if [ -n "$FILEBEAT_USER" ] && [ -n "$FILEBEAT_OPT" ]; then
-    filebeat_pid=$(ps -fu filebeat | grep filebeat | grep -v grep | awk '{print $2}')
+  if [ -n "$FILEBEAT_OPT" ]; then
+    filebeat_pid=$(ps -ef | grep filebeat | grep -v bash | grep -v grep | awk '{print $2}')
     if ps -p $filebeat_pid > /dev/null 2>&1; then
+      echo 'stop filebeat'
       kill $filebeat_pid
     fi
     while ps -p $filebeat_pid > /dev/null 2>&1; do
