@@ -12,7 +12,6 @@ RUN set -uex \
     && chown -R logstash:logstash /home/logstash
 
 COPY ["vps-logstash", "/usr/local/bin"]
-COPY ["logstash-app-log.conf", "/home/logstash"]
 
 WORKDIR /home/logstash
 
