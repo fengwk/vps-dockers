@@ -17,4 +17,6 @@ COPY ["nvim", "/root/.config/nvim"]
 # vps-almalinux脚本
 COPY ["vps-almalinux", "/usr/local/bin"]
 
+WORKDIR /root
+
 CMD ["/bin/bash"]
