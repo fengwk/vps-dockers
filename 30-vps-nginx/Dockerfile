@@ -4,7 +4,7 @@ ADD ["nginx-1.24.0.tar.gz", "/usr/local/src"]
 
 RUN set -uex \
     && mv /usr/local/src/nginx-1.24.0 /usr/local/src/nginx \
-    && dnf update -y \
+    # && dnf update -y \
     # HTTP rewrite module requires the PCRE library
     && dnf install -y pcre pcre-devel \
     # HTTP gzip module requires the zlib library

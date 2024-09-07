@@ -10,7 +10,7 @@ RUN set -uex \
     && ln -s /usr/local/mysql/bin/* /usr/local/bin/
 
 RUN set -uex \
-    && dnf update -y \
+    # && dnf update -y \
     # mysqld dependencies
     && dnf install -y libaio numactl libxcrypt-compat \
     # mysql dependencies

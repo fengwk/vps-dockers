@@ -11,8 +11,7 @@ RUN pip3 install jupyter-c-kernel \
     && mv /root/.local/share/jupyter/kernels/c /usr/local/share/jupyter/kernels
 
 # nodejs内核
-RUN dnf update -y \
-    && dnf install -y nodejs \
+RUN dnf install -y nodejs \
     && npm install -g ijavascript \
     && ijsinstall \
     && mv /root/.local/share/jupyter/kernels/javascript /usr/local/share/jupyter/kernels

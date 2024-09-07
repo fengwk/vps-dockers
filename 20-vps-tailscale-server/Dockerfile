@@ -3,7 +3,7 @@ FROM fengwk/vps-tailscale
 ADD ["filebeat-8.12.2-linux-x86_64.tar.gz", "/usr/local"]
 
 RUN set -uex \
-    && dnf update -y \
+    # && dnf update -y \
     && dnf install -y openssh-server \
     && ssh-keygen -t rsa -N '' -f /etc/ssh/ssh_host_rsa_key \
     && ssh-keygen -t dsa -N '' -f /etc/ssh/ssh_host_dsa_key \
