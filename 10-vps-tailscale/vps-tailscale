@@ -125,11 +125,17 @@ keepalive() {
     if [ $? -eq 0 ]; then
       if echo "$node_online_status_table" | grep -Eq "^$TAILSCALE_NODE_NAME@online$"; then
         # 如果节点状态为online说明headscale服务器正常，检查下网络是否能联通
-        # 如果无法连同说明状态有问题还是需要重启
-        any_node=$(echo "$node_online_status_table" | grep -v "$TAILSCALE_NODE_NAME" | grep online | shuf | head -n 1 | sed 's/@online//g')
-        # 找到除当前节点外的任一节点测试网络可达性
-        if [ -n "$any_node" ] && ! ping -c 1 -W 5 $any_node > /dev/null 2>&1; then
-          echo "unreachable $any_node, retry up"
+        # 要和所有非当前节点重试连接防止出现一台不成功后的雪崩
+        other_online_nodes=$(echo "$node_online_status_table" | grep -v "$TAILSCALE_NODE_NAME" | grep online | sed 's/@online//g')
+        succ_cnt=0
+        while IFS= read -r other_node; do
+          if ping -c 1 -W 5 $other_node > /dev/null 2>&1; then
+            succ_cnt=$(($succ_cnt + 1))
+            break
+          fi
+        done <<< "$other_online_nodes"
+        if [ $succ_cnt -eq 0 ]; then
+          echo "unreachable any node, retry up"
           tailscale logout
           tailscale_up
         fi
