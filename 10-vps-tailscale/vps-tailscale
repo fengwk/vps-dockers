@@ -2,21 +2,25 @@
 
 # HEADSCALE_NS 用于指定headscale命名空间
 if [ -z "$HEADSCALE_NS" ]; then
-  echo "error: HEADSCALE_NS is not set"
+  echo 'error: HEADSCALE_NS is not set'
   exit 1
 fi
 # HEADSCALE_SSH_HOST 用于指定部署headscale的服务器host
 if [ -z "$HEADSCALE_SSH_HOST" ]; then
-  echo "error: HEADSCALE_SSH_HOST is not set"
+  echo 'error: HEADSCALE_SSH_HOST is not set'
   exit 1
 fi
 # HEADSCALE_SSH_PORT 用于指定部署headscale的服务器的ssh端口，默认为22
 if [ -z "$HEADSCALE_SSH_PORT" ]; then
   HEADSCALE_SSH_PORT=22
 fi
+# HEADSCALE_SSH_PORT 用于指定部署headscale的服务器的ssh用户，默认为root
+if [ -z "$HEADSCALE_SSH_USER" ]; then
+  HEADSCALE_SSH_USER='root'
+fi
 # HEADSCALE_LOGIN_SERVER 用于指定部署headscale服务的url地址
 if [ -z "$HEADSCALE_LOGIN_SERVER" ]; then
-  echo "error: HEADSCALE_LOGIN_SERVER is not set"
+  echo 'error: HEADSCALE_LOGIN_SERVER is not set'
   exit 1
 fi
 # TAILSCALE_NODE_NAME 当前节点名称，默认使用主机名
@@ -26,7 +30,7 @@ fi
 
 # 使用ssh登陆到headscale所在vps上执行指定的headscale命令
 exec_headscale() {
-  ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -p $HEADSCALE_SSH_PORT root@$HEADSCALE_SSH_HOST docker exec vps-headscale headscale "$@"
+  ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -p $HEADSCALE_SSH_PORT $HEADSCALE_SSH_USER@$HEADSCALE_SSH_HOST docker exec vps-headscale headscale "$@"
 }
 
 # 检查headscale命名空间是否存在
@@ -119,7 +123,17 @@ keepalive() {
     node_online_status_table=$(get_node_online_status_table)
     # 只有当获取状态表成功时才进行实际的keepalive操作，防止偶尔的断连导致logout最终使节点ip改变
     if [ $? -eq 0 ]; then
-      if ! echo "$node_online_status_table" | grep -Eq "^$TAILSCALE_NODE_NAME@online$"; then
+      if echo "$node_online_status_table" | grep -Eq "^$TAILSCALE_NODE_NAME@online$"; then
+        # 如果节点状态为online说明headscale服务器正常，检查下网络是否能联通
+        # 如果无法连同说明状态有问题还是需要重启
+        any_node=$(echo "$node_online_status_table" | grep -v "$TAILSCALE_NODE_NAME" | grep online | shuf | head -n 1 | sed 's/@online//g')
+        # 找到除当前节点外的任一节点测试网络可达性
+        if [ -n "$any_node" ] && ! ping -c 1 -W 5 $any_node > /dev/null 2>&1; then
+          echo "unreachable $any_node, retry up"
+          tailscale logout
+          tailscale_up
+        fi
+      else
         echo 'tailscale offline, retry up'
         tailscale logout
         tailscale_up
