@@ -3,10 +3,10 @@ FROM fengwk/vps-server-jdk17
 RUN set -uex \
     && useradd -m rocketmq
 
-ADD ["rocketmq-all-4.9.4-bin-release.tar.gz", "/home/rocketmq/"]
+ADD ["rocketmq-all-5.1.4-bin-release.tar.gz", "/home/rocketmq/"]
 
 RUN set -uex \
-    && mv /home/rocketmq/rocketmq-all-4.9.4-bin-release /home/rocketmq/rocketmq \
+    && mv /home/rocketmq/rocketmq-all-5.1.4-bin-release /home/rocketmq/rocketmq \
     && chown -R rocketmq:rocketmq /home/rocketmq
 
 COPY ["vps-rocketmq-broker", "/usr/local/bin"]
