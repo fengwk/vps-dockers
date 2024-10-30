@@ -21,12 +21,14 @@ start() {
 
   # 启动namesrv
   echo 'Broker starting...'
-  su rocketmq /bin/bash -c "$mqbin_dir/mqbroker -c $BROKER_CONF" &
+  su rocketmq /bin/bash -c "$mqbin_dir/mqbroker -c $BROKER_CONF --enable-proxy" &
 
   # 延迟等待启动
   sleep 3
 
-  broker_pid=$(ps -ef | grep java | grep org.apache.rocketmq.broker.BrokerStartup | awk '{print $2}')
+  # broker_pid=$(ps -ef | grep java | grep org.apache.rocketmq.broker.BrokerStartup | awk '{print $2}')
+  # 5.x使用Proxy
+  broker_pid=$(ps -ef | grep java | grep org.apache.rocketmq.proxy.ProxyStartup | awk '{print $2}')
   echo "Wait namesrv: $broker_pid"
   while ps -p $broker_pid > /dev/null 2>&1; do
     sleep 1
