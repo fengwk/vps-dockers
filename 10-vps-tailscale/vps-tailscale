@@ -27,6 +27,14 @@ fi
 if [ -z "$TAILSCALE_NODE_NAME" ]; then
   TAILSCALE_NODE_NAME=$(hostname)
 fi
+# TAILSCALE_KEEPALIVE_SECONDS_MIN 用于tailsacle保活机制的最小等待秒数，默认30秒
+if [ -z "$TAILSCALE_KEEPALIVE_SECONDS_MIN" ]; then
+  TAILSCALE_KEEPALIVE_SECONDS_MIN=30
+fi
+# TAILSCALE_KEEPALIVE_SECONDS_MAX 用于tailsacle保活机制的最大等待秒数，默认120秒
+if [ -z "$TAILSCALE_KEEPALIVE_SECONDS_MAX" ]; then
+  TAILSCALE_KEEPALIVE_SECONDS_MAX=120
+fi
 
 # 使用ssh登陆到headscale所在vps上执行指定的headscale命令
 exec_headscale() {
@@ -84,7 +92,7 @@ do_tailscale_up() {
   while ! exists_headscale_ns; do
     create_headscale_ns
     if ! exists_headscale_ns; then
-      sleep 5
+      sleep 10
     fi
   done
 
@@ -93,7 +101,7 @@ do_tailscale_up() {
   while [ -z "${authkey}" ]; do
     authkey="$(apply_authkey_with_ephemeral)"
     if [ -z "${authkey}" ]; then
-      sleep 5
+      sleep 10
     fi
   done
 
@@ -112,14 +120,15 @@ do_tailscale_up() {
 # 使用tailsacle组网
 tailscale_up() {
   while pgrep tailscaled > /dev/null 2>&1 && ! do_tailscale_up; do
-    sleep 5
+    sleep 10
   done
 }
 
 # 保持组网状态
 keepalive() {
   while pgrep tailscaled > /dev/null 2>&1; do
-    sleep 15
+    # 随机睡眠30-120秒然后进行保活，使用随机值是为了防止突发的大量请求导致headscale服务瞬间负载过高
+    sleep $(shuf -i "$TAILSCALE_KEEPALIVE_SECONDS_MIN-$TAILSCALE_KEEPALIVE_SECONDS_MAX" -n 1)
     node_online_status_table=$(get_node_online_status_table)
     # 只有当获取状态表成功时才进行实际的keepalive操作，防止偶尔的断连导致logout最终使节点ip改变
     if [ $? -eq 0 ]; then
