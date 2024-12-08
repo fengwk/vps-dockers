@@ -5,7 +5,7 @@ for dir in $(ls -d */ | sort); do
   # 去除目录后缀/和前缀表示顺序的数字
   dir=${dir%/}
   # if [ "$dir" != "00-vps-almalinux" ] && [ -f "$dir/Dockerfile" ]; then
-  if [ "$dir" == "30-vps-headscale" ] && [ -f "$dir/Dockerfile" ]; then
+  if [ "$dir" = "30-vps-headscale" ] && [ -f "$dir/Dockerfile" ]; then
     # 镜像标签
     image_name="fengwk/$(echo $dir | sed -E 's/^[0-9]+-//g')"
     # 镜像名
