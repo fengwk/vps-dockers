@@ -129,22 +129,25 @@ keepalive() {
   while pgrep tailscaled > /dev/null 2>&1; do
     # 随机睡眠30-120秒然后进行保活，使用随机值是为了防止突发的大量请求导致headscale服务瞬间负载过高
     sleep $(shuf -i "$TAILSCALE_KEEPALIVE_SECONDS_MIN-$TAILSCALE_KEEPALIVE_SECONDS_MAX" -n 1)
+    echo 'tailscale keepalive...'
     node_online_status_table=$(get_node_online_status_table)
     # 只有当获取状态表成功时才进行实际的keepalive操作，防止偶尔的断连导致logout最终使节点ip改变
     if [ $? -eq 0 ]; then
       if echo "$node_online_status_table" | grep -Eq "^$TAILSCALE_NODE_NAME@online$"; then
         # 如果节点状态为online说明headscale服务器正常，检查下网络是否能联通
-        # 要和所有非当前节点重试连接防止出现一台不成功后的雪崩
+        # 检查当前节点和所有其它节点的连通性，如果超过半数节点则认为正常，否则需要重新建连
         other_online_nodes=$(echo "$node_online_status_table" | grep -v "$TAILSCALE_NODE_NAME" | grep online | sed 's/@online//g')
         succ_cnt=0
+        total_cnt=0
         while IFS= read -r other_node; do
           if ping -c 1 -W 5 $other_node > /dev/null 2>&1; then
             succ_cnt=$(($succ_cnt + 1))
-            break
           fi
+          total_cnt=$(($total_cnt + 1))
         done <<< "$other_online_nodes"
-        if [ $succ_cnt -eq 0 ]; then
-          echo "unreachable any node, retry up"
+        quorum=$((($total_cnt + 1) / 2))
+        if [ $succ_cnt -lt $quorum ]; then
+          echo "success count '$succ_cnt' less than quorum '$quorum', retry up"
           tailscale logout
           tailscale_up
         fi
