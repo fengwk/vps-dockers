@@ -6,7 +6,8 @@ for dir in $(ls -d */ | sort); do
   dir=${dir%/}
   # if [ "$dir" != "00-vps-almalinux" ] && [ -f "$dir/Dockerfile" ]; then
   # if [ "$dir" = "30-vps-headscale" ] && [ -f "$dir/Dockerfile" ]; then
-  if [ -f "$dir/Dockerfile" ]; then
+  if [ "$dir" = "50-vps-app" ] && [ -f "$dir/Dockerfile" ]; then
+  # if [ -f "$dir/Dockerfile" ]; then
     # 镜像标签
     image_name="fengwk/$(echo $dir | sed -E 's/^[0-9]+-//g')"
     # 镜像名

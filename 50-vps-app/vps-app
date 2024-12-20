@@ -28,8 +28,13 @@ start() {
     # 设置GIT_SSH_COMMAND避免git clone过程中出现yes/no的ssh询问
     # export GIT_SSH_COMMAND="ssh -o \"StrictHostKeyChecking=no\""
     # clone app仓库
-    echo "Git clone from $APP_REPO"
-    git clone $APP_REPO /home/app/app
+    if [ -n "$APP_BRANCH" ]; then
+      echo "Git clone from $APP_REPO, branch $APP_BRANCH"
+      git clone -b $APP_BRANCH $APP_REPO /home/app/app
+    else
+      echo "Git clone from $APP_REPO"
+      git clone $APP_REPO /home/app/app
+    fi
     echo 'Git clone done'
     # 构建app
     echo 'App building...'
